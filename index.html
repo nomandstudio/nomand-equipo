@@ -1424,87 +1424,253 @@ function generarPDF() {
   const fechaStr = fecha ? new Date(fecha+'T00:00:00').toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'}) : '';
   const hoy = new Date().toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'});
 
-  let serviciosHTML = '';
-  let subtotal = 0;
-  let paqueteNombre = '';
+  var MTN = 'https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0e7aa0cfb6c29eb251dd45_mathias-reding--6uN87kZrdE-unsplash.jpg';
+  var LOGO = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAAGQCAYAAACAvzbMAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAEwBJREFUeNrs3U1y40aaBmD0hLfj0JzA9KK9HWnvCFMnsHQCU6G9LZ2gVCeQPHuH5BNIfQKpI2pfqm33ojgnmPL4ADOZVLKaBYESQYAkkHieCEa5VT8tAlS++IDML4sCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACA/P3FIYDd+9//+vdR+CW+9sNrL7y+Sf97mWl4/Xd4fQqvx/j6+uc/PzmSCBDIOyxiQIzD64cUGOOW/ulpCpO/h9ddCJSpo40AgTwqjKPw+imFxjbEALkLr99DmDw6CwgQ6FelMdlyaCwTA+T38LpxqwsBAt2uNt6kimOvY99eDI9fU5BMnS0ECHQrOCY9+ZbfhteVigQBArsLjr0UHGc9/PZjeLwNIXLlTCJAYLvhEauNy6J7t6rqis9ITjxsR4DAdqqO26K9KbhdEauRC2cYAQKbCY9xCo+9TN/iQ3gdezbCa/7NIYBa4RGvzu8zDo8iVVUfw3vdd8YRINBOeFwXTw/LhyAG5Pv0jAcquYUFrwdHHExjeBwN9BDEh+s3PgkIEKgfHvGW1dBv5wgRnnELC152Kzxmrt3OQoDA6tVHvG01diSECNXcwoLq8LgohvPAvK7Dr3/+88FhQIDA8/CID8tvHYml4vqQA80Y+cohoG3ff/99fPAc+0LFNuaj9OXYIuPXd+/e3XQ8POL3e+0svmi+Cv/AoVCBQJvhcZQG4GUL7WY9l0KQdLLnUgiQOONq7EyuJHbyPXcYBAi0ER5x4L1f4Y/GWyCHXQuREB6xarp0JmvxPGTAzMKirfCIU11XfW4wW1sR/s6oQ+ERvxcPzetzu0+AQKPwmC+2q9MfajYfPf3dLsihJfsujNKMNQQIbCU85upULZusPsbFcNuUtOGXtGIfAQK1XBfNVmqPQwjt+jaIW1fN7BWeHQ2Sh+g0qT7iwD9p6Z872cUU31R93DubrfjW2hAVCKwSHpMWw2NWyaQpwKqP/po4BCoQeC08NrVSe6vTe9PMq4/OaHvnL1Qg/+EwqEBgWXjE5x2bemax7ZlZqo+Wz59miwIEloVHkxlXq4pVwf2WQsTMq/b96BAIENhFeMzFKmejs3rSlbKppxsIZVN6BQiUNZ2uW9ckhNaFK+V+hohDIEBgXn3saj/wN2m2l0GuX4SzAIGNTNetXfmkB/etSft9sDljh0CAIDzmrdl3re3Giz84uxu1l6ZII0AYaHhscrpu7QGpaHd6ryvkzdt3CAQIwwyPbc64qjMgNV68mGYIGdwECAKEgYTH58qhhcaLBrbtcJtQgDBAlx0fZCcNZ2aNneKtsBZEgDCw6iOGx6QH32qTxovfONNbodITIAwoPGJwnPXoW153eu/I2d4OK9Lzpxsv8xlX73v4rcfuvd++e/fuU41B7X+KYd9eiZ2OH8Lrj4WvxecV4w38fx1+/fOfD37C8vWVQyA8iv5uqDR74B/ew2GNEBlqeNyE19tlGz6ldRuxCtWhmJW5hTXs8IiD6XXPB9WNN17MoOI4CMFx8tJugfH3wusi/tn0d9owcvgFCPm6LfJ42DlJEwAoVR0hFGJ4rBwI6c8epopFgCBAqKw+YuUxzugtnW2w8WIfnceqo/zFf/7jH5Pw+hhe/5de7+PXSiHyKf3dG4cRAUI5POKAkeNg23rjxZ6Kt6uuSsGxF17xWdd1qTKYtawJv3cb/0wpSIQIAoQvwqMrDRI35X7gIRLD46YcHsXTRImXKs74ubgXIggQloVHlxokbspeqkSWTQyYDjQ8VgnV/RdC5M5PEAJkuOEx62hbDGMa60uNF99m+p6vyuGR1N1JctlFRgyRRz9JCJBhilehowG938rGi2mQze1qOs62Oi9/MVQS6+4keRT+7kXpuMV1NoeZV3AIECqqj23vZ94VcXrvWctX0w+film8Pew4PCpnWxXNJkq8qZqdFX45Lp46AIBWJgMIjziADn2NxPG7d+++qDpSn6ZVnw18SkFxkwbRZ9K/F4/1L8X2bhM+xnUeFeERq47bFv79WdXx1+++eyy911X//fPybDAECP0Jj3gFee1IPA2EIUQeKwb9OBCOX/i7MXhOlgXHkiBZ99ZRrfAonnpNfSqFx7w1zV6bx64iRFb5bOmFJUDoaXi0PZDkECKVjRfDYBgrhzelYzWrOta9gl5xgG30XirCY1Q8NcVs+5xPw+sghMin0nuM728iQAQIeYVHHEA+Co/qq/ZljRfDgDhO1UgcMO/KA/Rvv/22lwbMH4unCQnT9Hp7ejo63VKIfEoD82MpPOrcklv72FWEyNL1JeF7NL4IEHoYHpscSPruJgTISd2/FMJjPjV4tOSPxBC52EKIHOwgPJaGyAvPkmJzxm993PJmFlZ+ur4l7a7VbrwYwmNUvD4N+k34c8umDZ+09L2f7DA8iqKi8/HC9N7yrLYHHzUBQr+qj3gFPHEkXrVy48V022rVBZiTDYbIeUsLBRsHcFpfUg6R+P4Wb2/9zcdMgNCf8IgDos2AVrdq48W6Fd0mQuSm6mF+g4WCbYTIRen9zdvAxxCJ3Xy1PhkAz0DyCA8zrtZTOb13ofp4bZbRi4P+6enps8BY45lIfJh/vCQ8dl1tnvz1u+9uSu9vlAJl6uMlQOh+eJhx1cxdCJDjivCIlcdZw397WYhcrFgtLlvr0YXwWBoiDIdbWP0PD5VHMx8qwmPSQnhE8XbWs38nbR372qC7LDwmRbeec12nxYsIEHrGjKuGFUKoPi4qwqPNabeX6d8sh8hL+2zMek4tCY8udha4FyIChH5VHxeFGVdNxCv88w2Hx+er9BohMl8oOO1JeBSpAr5PK+EZEM9A+hkeXR5M+iAOzgeLK9LTQsFN3g6cBcPp6emzB/YLLUGWrTLvy/muXK2OAKE74WHGVQsD+eLMqy2ExyohEqfjTivCo2/nW4gIEDoaHmZcNXewo/D4ovoJIfLqANvD8Ji7CwFy7KOWP89A+hUeKo9mTkrhsYttfkfxPKb/7xzDIzoqr1ZHgLBbZlw1cx7C46YUHrva5nf/pRBZ6G/V54uFuFr90sdOgLD76uOiMOOqiThd96oiPHYZyM8aEy5ewWdSaZ6Vt8VFgLDd8Ig/gHpcNQuP8mrwrrS7r+yblVZ259JL6lqICBB2Ex4vXaXyuqq1HtvuXrtWiBRPjRcfMwqRsY9jfszC6m54mHHVPDwOS2s9utRDquzZhlRb3utj0yr3VkeAsJnwsKtgs8EqTted9iQ8PlcdIURuhAh94RZWN5lx1XCQKoXHpOjHJIRnLU/SgryqHf/6KIbhdQpFVCBsoPq4KDw0b6K8UDAOyH1bk7CsEnlf7GbacdusVleBsIHwmAiPZgNvBuExr0SOKiqR4+LLbWP7KlbXtz6uKhDaCw89rpqHx81CeIzT8eyryr5ZPV+hXnYTgvHER1eA0Cw8zLhq5iqEx/lCeOQyyAoROs0trG6Eh8qjwQCUaXgU6T3cp/f0WZrFdFjkcTtrYqGhAGF9Zlw1C4+TTMOjHCKjihDJ5crdanUBwhrVx0Whx9W6vlhlnvpbXWdayc26BpebL4YQucssRI58rPvFM5DdhceksKtgk/D4vMq8I80Rt/a+y3uJ9GjHwtdYaChAWCE84kD33pEQHkJEiPSZW1jbD49R0e/ppbseXE4W+1ulQXNIz5Aq9xJJHXzfZvD+ZrfrrFYXIDwPj13sgJdTeJT3Mo/hMcT75pVdmkOIXIRfbjJ4f7OLLCEiQPjS0K6WNx0ekwEfk2V7iZxkEiL7KnUBwr+qj8uBXi234bwUHheF2WuDCBF7q3ebh+jbCY9JYcbVusotShzL525OT0+fTecNg2+8gh/n8P6sVleBDDU89g14wmMLlchFxddj88UcZjPF1eoXTrMKZGjhMSqeput6GLjGVWdplXm8/aeD6yuBm/mGVCdpthkCJPvwsKtge+GhU7EQESId5BbW5twKD+GxAy/taphD88XL1I0YFUi21cfQp5iu6zGEx4HwaMVxqETuSpVIVm3urVZXgeQYHhPhsV54pKvkeXjk3BxxW5VIrm3gZ7fkQiCOnGYVSE7hMS4sflo7PAbc32qjV+oZb0hlb3UBkk14uN2y/iD3rfDYeojkcrEjRHbILax2wsPtlgaDW6k5og222rVsV8OHIo+9RKyzEiC954p5/fDQ32o7IXK7pINvDiFypOWJAOlr9aFB4nqOhcdWjYrlbeBzCJGJEBEgfQuPM4PeWmKLkoeF8Jg4jlvx0l4iV5mEiM/RFnmIvn54xA+qK571wuOmFB6O43Yt29UwlyrQanUVSKfDo3JDH171Vnh0pxIpfzGjNvDXaZYZKpDOhUcs/z8WZlzVpUVJB8/JkjbwOVQiVqsLkE6GhxlXwmMIIfI+g8+5ENkwt7BqlsbCo7aHUniMhEenVO5qWDy1POn7wDubvmxvdQHSheoj/pDZkraeOAAdL4TH7AdaeHQ/RBY6+PY9RGYXLEJEgOwyPCaFaabrhIf+Vv0KkbNMQ2RfiAiQXYXHuDBTqK448ByXWpTYH6X7LpfsJXJS9L+Dr5mTAmTr4bFf2EZ1nfCIlcd0/oV0e2Ts0PRC1YZUubSBt1q9ZWZhLQ+PWO7GmSgjR6N2eGhR0n9VW+PmMnvuKoTiuVOsAtlkeNwLj9rOS+Gh1YtKpIvOtDwRIJukpfgaV6wVq8zdc+75z8GSXQ1zuHq/FiICZBPVx6Wr5tq0KMnTsr1E4rnOoYOvlicNeQbyZXgY+OqrWmX+3mHJyrJdDXP4ebFaXYC0Eh7xSsR+5vXchfA4LoWHVeZCRIgMhFtYhem6a4o/bPpbDcf8dtZo8YvpdtZNBu9NyxMBsnZ4GPjqh0d5lbk94YcRIlVb4+bQBj4Go9XqAqRWeBj46psWTzOutCgZpmW7GuYQIlqeCJBa4WHgq+chvA4W13oUpjwLkfxCxESaFQ3yIbrwqC1WG+eLU3VT9XERfnnj8AzWsq1xc9hL5CYFIi/4aqDvewjh8Visv2J4vFBx/F48zbb6VAqPfeGhEkk/Swelrx9m8DMW+2YVQkQFUq4++tCbaXHwj//9x0IlUJ5q+Fge3LchzcYZlb68tzBofJN+v+rPkZdnuxqm5wg5XKidhxC5cocFSBfCY5peccD/sHCVP/u9xQ62uUkVyygNKP+58N8Ika47SdOVGWqAhPCIjf220ZvpMYXEh4WKIetwaBgs44VQGatWsgyRHLpaC5GhBsiGWpTMw+HvKTAeS7OTWC9Q9lKQ/JB+VaX0P0RyWGtltfoQA6TFhYKPC4EhLHYTKEcqlF54G0LkQogIkL6HR5PyOX5IHlJgPOziQTWVgTJKQfKT6qTTct2QSogMKEBu02AjMPINk0kKE5WJENmWxxQigx8jsg2QEB4xOF5qkPhQ/OuWlMDof5iMU5BMHI3Oh8i46H/nayGSeYB8LF2VLlYXD36usw2SvRQiv6hKOh0i8Rz1vWXI4EMk5wC5KJ7uVz544D3YMDlKQTJ2NHbuOITIXYYhchcC5FiAQL5BEiuR2HYlBopOq7uR84ZUxyFE7gQI5B0kbm91M0TiAt+zHr+vwbY7ESAMNUzmU4GPHI1OhEgfetSVxffwt/C6GupzEAHC0INklCqSOHi5vbXbEOlqG/iHFBaxPdE0fv/WgQgQUJV0KEQ60nxxWix0nAhB8eBUCRCoEyTzZyVWu2/Wsw2pdhAi02Jhin8IjKnTIkCgrTAZFVqn5BQiix0nHgWGAIFth8m8sSObDZHLovmDdRWGAIHOhcm8S/CPhX1MNhIiKUiOUpCsenwFhgCB3gXKfvHlPiZmdNX3EALksOo30oLDn4rnXQXmt6Q+CAwBArkFip0WawgB8uqYFMIkHsuRGVICBIYSKLEiWQyVfaHyhdgK5NcQIEJBgAArBsu8OomvePtrHjS5mW8BHX/9sPi/ywsKESBAs2CZh8p+CpVvFiqWcce+3Wl6FSkU/hAQAgTodsiUq5V52JT9ULNS+PBCBfE5NEIwTJ0FAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAyN3/CzAAbkLt6YxDJREAAAAASUVORK5CYII=';
+
+  var serviciosDetalle = [];
+  var subtotal = 0;
+  var paqueteNombre = '';
+  var paqueteDesc = '';
 
   if (cotizSeleccion.tipo === 'paquete' && cotizSeleccion.paqueteId) {
-    const pkg = PAQUETES.find(p=>p.id===cotizSeleccion.paqueteId);
+    var pkg = PAQUETES.find(function(p){return p.id===cotizSeleccion.paqueteId;});
     if (pkg) {
       paqueteNombre = pkg.nombre;
+      paqueteDesc = pkg.ideal;
       subtotal = pkg.precio_paquete;
-      serviciosHTML = pkg.servicios.map(sid => {
-        const s = SERVICIOS_CATALOG.find(x=>x.id===sid);
-        return s ? `<tr><td style="padding:12px 16px;font-size:13px;color:#1c1c1e;border-bottom:1px solid #f0eeea;">${s.nombre}</td><td style="padding:12px 16px;font-size:12px;color:#6c6c70;border-bottom:1px solid #f0eeea;">${s.desc}</td><td style="padding:12px 16px;font-size:13px;color:#F39200;font-weight:700;text-align:right;border-bottom:1px solid #f0eeea;">Incluido</td></tr>` : '';
-      }).join('');
+      pkg.servicios.forEach(function(sid) {
+        var s = SERVICIOS_CATALOG.find(function(x){return x.id===sid;});
+        if (s) serviciosDetalle.push(s);
+      });
     }
   } else {
-    const checked = document.querySelectorAll('#cotiz-individuales input[type=checkbox]:checked');
-    checked.forEach(cb => {
-      const s = SERVICIOS_CATALOG.find(x=>x.id===cb.value);
-      if (s) {
-        subtotal += s.precio_unit;
-        serviciosHTML += `<tr><td style="padding:12px 16px;font-size:13px;color:#1c1c1e;border-bottom:1px solid #f0eeea;">${s.nombre}</td><td style="padding:12px 16px;font-size:12px;color:#6c6c70;border-bottom:1px solid #f0eeea;">${s.desc}</td><td style="padding:12px 16px;font-size:13px;font-weight:700;text-align:right;border-bottom:1px solid #f0eeea;">$${s.precio_unit.toLocaleString()}</td></tr>`;
-      }
+    document.querySelectorAll('#cotiz-individuales input[type=checkbox]:checked').forEach(function(cb) {
+      var s = SERVICIOS_CATALOG.find(function(x){return x.id===cb.value;});
+      if (s) { serviciosDetalle.push(s); subtotal += s.precio_unit; }
     });
   }
 
-  const iva = Math.round(subtotal * IVA);
-  const total = subtotal + iva;
+  var iva = Math.round(subtotal * IVA);
+  var total = subtotal + iva;
 
-  const procesoHTML = PROCESO.map(p => `
-    <div style="display:flex;gap:20px;margin-bottom:24px;align-items:flex-start;">
-      <div style="width:48px;height:48px;border-radius:50%;background:rgba(243,146,0,0.1);border:1px solid rgba(243,146,0,0.2);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#F39200;flex-shrink:0;">${p.paso}</div>
-      <div>
-        <div style="font-size:14px;font-weight:700;color:#1c1c1e;margin-bottom:4px;">${p.titulo} <span style="font-size:11px;color:#F39200;font-weight:400;">(${p.tiempo})</span></div>
-        <div style="font-size:13px;color:#6c6c70;line-height:1.6;">${p.desc}</div>
-      </div>
-    </div>`).join('');
+  var css = ''
+    + '* { margin:0; padding:0; box-sizing:border-box; }'
+    + 'body { font-family: -apple-system, Arial, sans-serif; background:white; color:#1c1c1e; }'
+    + '.page { width:794px; min-height:1123px; position:relative; overflow:hidden; page-break-after:always; display:flex; flex-direction:column; }'
+    + '@media print { .page { page-break-after:always; } }'
+    + '.inner { padding:56px; flex:1; display:flex; flex-direction:column; position:relative; z-index:2; }'
+    + '.mtn { position:absolute; inset:0; background-image:url("'+MTN+'"); background-size:cover; background-position:center; z-index:0; }'
+    + '.ov-dark { position:absolute; inset:0; background:linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.65) 100%); z-index:1; }'
+    + '.ov-light { position:absolute; inset:0; background:linear-gradient(to bottom, rgba(245,243,240,0.88) 0%, rgba(245,243,240,0.75) 50%, rgba(245,243,240,0.88) 100%); z-index:1; }'
+    + '.glass-d { background:rgba(0,0,0,0.38); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.14); border-radius:18px; }'
+    + '.glass-w { background:rgba(255,255,255,0.55); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.7); border-radius:18px; }'
+    + '.lbl-o { font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:#F39200; font-weight:700; }'
+    + '.lbl-w { font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:rgba(255,255,255,0.5); font-weight:700; }';
 
-  const htmlParts = [];
-  htmlParts.push("<!DOCTYPE html>\n<html><head><meta charset=\"UTF-8\">\n<style>\n  * { margin:0; padding:0; box-sizing:border-box; }\n  body { font-family: Arial, sans-serif; color: #1c1c1e; background: white; }\n  .page { width:794px; min-height:1123px; padding:60px; position:relative; page-break-after:always; }\n  @media print { .page { page-break-after: always; } }\n</style>\n</head><body>\n\n<!-- P\u00c1GINA 1: PORTADA -->\n<div class=\"page\" style=\"background:#0f0f0f;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;\">\n  <!-- Mountain SVG background -->\n  <div style=\"position:absolute;inset:0;pointer-events:none;\">\n    <svg viewBox=\"0 0 794 1123\" xmlns=\"http://www.w3.org/2000/svg\" style=\"width:100%;height:100%;position:absolute;top:0;left:0;\">\n      <!-- Deep mountains -->\n      <polygon points=\"0,1123 200,520 400,800 600,380 794,650 794,1123\" fill=\"rgba(255,255,255,0.02)\"/>\n      <polygon points=\"0,1123 150,600 350,850 550,450 750,700 794,680 794,1123\" fill=\"rgba(255,255,255,0.03)\"/>\n      <!-- Mid mountains -->\n      <polygon points=\"0,1123 100,720 280,900 480,580 680,780 794,750 794,1123\" fill=\"rgba(255,255,255,0.025)\"/>\n      <!-- Orange accent line on horizon -->\n      <polyline points=\"0,820 120,680 280,760 420,620 560,700 680,580 794,640\" stroke=\"rgba(243,146,0,0.15)\" stroke-width=\"1\" fill=\"none\"/>\n      <!-- Subtle grid lines -->\n      <line x1=\"0\" y1=\"200\" x2=\"794\" y2=\"200\" stroke=\"rgba(255,255,255,0.03)\" stroke-width=\"0.5\"/>\n      <line x1=\"0\" y1=\"400\" x2=\"794\" y2=\"400\" stroke=\"rgba(255,255,255,0.03)\" stroke-width=\"0.5\"/>\n      <line x1=\"0\" y1=\"600\" x2=\"794\" y2=\"600\" stroke=\"rgba(255,255,255,0.03)\" stroke-width=\"0.5\"/>\n      <line x1=\"0\" y1=\"800\" x2=\"794\" y2=\"800\" stroke=\"rgba(255,255,255,0.03)\" stroke-width=\"0.5\"/>\n      <!-- Orange dot accent -->\n      <circle cx=\"720\" cy=\"160\" r=\"3\" fill=\"#F39200\" opacity=\"0.6\"/>\n      <circle cx=\"740\" cy=\"160\" r=\"1.5\" fill=\"#F39200\" opacity=\"0.3\"/>\n      <circle cx=\"755\" cy=\"160\" r=\"1\" fill=\"#F39200\" opacity=\"0.2\"/>\n    </svg>\n  </div>\n  <!-- Content -->\n  <div style=\"position:relative;z-index:1;display:flex;justify-content:space-between;align-items:center;\">\n    <div style=\"font-size:13px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:white;\">NOMAND STUDIO</div>\n    <div style=\"font-size:12px;color:rgba(255,255,255,0.4);\">");
-  htmlParts.push(String(hoy));
-  htmlParts.push("</div>\n  </div>\n  <div style=\"position:relative;z-index:1;text-align:center;padding:80px 0;\">\n    <div style=\"font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#F39200;font-weight:700;margin-bottom:20px;\">COTIZACI\u00d3N DE SERVICIOS</div>\n    <div style=\"font-size:52px;font-weight:700;font-style:italic;color:white;line-height:1.1;margin-bottom:16px;\">");
-  htmlParts.push(String(proyecto));
-  htmlParts.push("</div>\n    <div style=\"font-size:20px;font-weight:300;color:rgba(255,255,255,0.6);\">Preparado para ");
-  htmlParts.push(String(cliente));
-  htmlParts.push("</div>\n    ");
-  htmlParts.push(paqueteNombre ? '<div style="margin-top:24px;display:inline-block;padding:8px 20px;background:rgba(243,146,0,0.15);border:1px solid rgba(243,146,0,0.3);border-radius:100px;font-size:13px;color:#F39200;">'+paqueteNombre+'</div>' : '');
-  htmlParts.push('</div>\n  </div>\n  <div style="position:relative;z-index:1;display:flex;justify-content:space-between;padding-top:32px;border-top:0.5px solid rgba(255,255,255,0.1);">\n    <div><div style="font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Cliente</div><div style="font-size:13px;color:white;">');
-  htmlParts.push(String(cliente));
-  htmlParts.push('</div>');
-  htmlParts.push(correo ? '<div style="font-size:12px;color:rgba(255,255,255,0.4);">'+correo+'</div>' : '');
-  htmlParts.push('</div>\n    <div style="text-align:center;"><div style="font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Total</div><div style="font-size:24px;font-weight:700;color:#F39200;">$');
-  htmlParts.push(String(total.toLocaleString()));
-  htmlParts.push('</div><div style="font-size:11px;color:rgba(255,255,255,0.4);">IVA incluido</div></div>\n    ');
-  htmlParts.push(fechaStr ? '<div style="text-align:right;"><div style="font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Entrega estimada</div><div style="font-size:13px;color:white;">'+fechaStr+'</div></div>' : '<div></div>');
-  htmlParts.push('\n  </div>\n</div>\n\n');
-  htmlParts.push('<!-- PÁGINA 2 -->\n<div class="page" style="overflow:hidden;">\n  <div style="position:absolute;top:0;right:0;width:200px;height:200px;pointer-events:none;opacity:0.04;"><svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><polygon points="100,10 190,100 100,190 10,100" fill="none" stroke="#F39200" stroke-width="1"/><polygon points="100,30 170,100 100,170 30,100" fill="none" stroke="#F39200" stroke-width="0.5"/></svg></div>\n  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:48px;padding-bottom:24px;border-bottom:2px solid #F39200;">\n    <div style="font-size:13px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#1c1c1e;">NOMAND STUDIO</div>\n    <div style="font-size:11px;color:#6c6c70;">Cotización · ');
-  htmlParts.push(String(proyecto));
-  htmlParts.push("</div>\n  </div>\n\n  <div style=\"font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#F39200;font-weight:700;margin-bottom:8px;\">SERVICIOS INCLUIDOS</div>\n  <div style=\"font-size:32px;font-weight:700;font-style:italic;color:#1c1c1e;margin-bottom:32px;\">Detalle de la propuesta</div>\n\n  <table style=\"width:100%;border-collapse:collapse;margin-bottom:32px;\">\n    <thead>\n      <tr style=\"background:#f7f6f3;\">\n        <th style=\"padding:10px 16px;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#6c6c70;font-weight:700;text-align:left;border-bottom:2px solid #F39200;\">Servicio</th>\n        <th style=\"padding:10px 16px;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#6c6c70;font-weight:700;text-align:left;border-bottom:2px solid #F39200;\">Descripci\u00f3n</th>\n        <th style=\"padding:10px 16px;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#6c6c70;font-weight:700;text-align:right;border-bottom:2px solid #F39200;\">Costo</th>\n      </tr>\n    </thead>\n    <tbody>");
-  htmlParts.push(String(serviciosHTML));
-  htmlParts.push("</tbody>\n  </table>\n\n  <div style=\"margin-left:auto;max-width:280px;\">\n    <div style=\"display:flex;justify-content:space-between;padding:10px 0;font-size:13px;border-bottom:1px solid #f0eeea;\"><span style=\"color:#6c6c70;\">Subtotal</span><span>$");
-  htmlParts.push(String(subtotal.toLocaleString()));
-  htmlParts.push("</span></div>\n    <div style=\"display:flex;justify-content:space-between;padding:10px 0;font-size:13px;border-bottom:1px solid #f0eeea;\"><span style=\"color:#6c6c70;\">IVA (16%)</span><span>$");
-  htmlParts.push(String(iva.toLocaleString()));
-  htmlParts.push("</span></div>\n    <div style=\"display:flex;justify-content:space-between;padding:16px 0;font-size:20px;font-weight:700;border-top:2px solid #F39200;margin-top:4px;\"><span>Total</span><span style=\"color:#F39200;\">$");
-  htmlParts.push(String(total.toLocaleString()));
-  htmlParts.push("</span></div>\n  </div>\n\n  ");
-  htmlParts.push(String(notas ? `<div style="margin-top:32px;padding:20px;background:#f7f6f3;border-radius:12px;border-left:3px solid #F39200;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:0.12em;color:#F39200;font-weight:700;margin-bottom:6px;">Notas</div><div style="font-size:13px;color:#6c6c70;line-height:1.6;">${notas));
-  htmlParts.push("</div></div>` : ''}\n</div>\n\n<!-- P\u00c1GINA 3: PROCESO -->\n<div class=\"page\" style=\"overflow:hidden;\">\n  <div style=\"position:absolute;bottom:0;right:0;width:300px;height:200px;pointer-events:none;opacity:0.05;\">\n    <svg viewBox=\"0 0 300 200\" xmlns=\"http://www.w3.org/2000/svg\" style=\"width:100%;height:100%\">\n      <polygon points=\"0,200 80,60 160,130 240,20 300,80 300,200\" fill=\"#F39200\"/>\n    </svg>\n  </div>\n  <div style=\"position:absolute;top:200px;left:0;width:4px;height:500px;background:linear-gradient(to bottom,transparent,rgba(243,146,0,0.3),transparent);pointer-events:none;\"></div>\n  <div style=\"display:flex;justify-content:space-between;align-items:center;margin-bottom:48px;padding-bottom:24px;border-bottom:2px solid #F39200;\">\n    <div style=\"font-size:13px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#1c1c1e;\">NOMAND STUDIO</div>\n    <div style=\"font-size:11px;color:#6c6c70;\">Proceso de trabajo</div>\n  </div>\n  <div style=\"font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#F39200;font-weight:700;margin-bottom:8px;\">C\u00d3MO TRABAJAMOS</div>\n  <div style=\"font-size:32px;font-weight:700;font-style:italic;color:#1c1c1e;margin-bottom:40px;\">Tu proyecto, paso a paso</div>\n  ");
-  htmlParts.push(String(procesoHTML));
-  htmlParts.push("\n  <div style=\"margin-top:48px;padding:32px;background:#0f0f0f;border-radius:16px;text-align:center;\">\n    <div style=\"font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#F39200;font-weight:700;margin-bottom:12px;\">NUESTRO COMPROMISO</div>\n    <div style=\"font-size:18px;font-style:italic;font-weight:300;color:white;line-height:1.5;\">Exploramos ideas, creamos identidad.<br>Tu marca merece ser memorable.</div>\n  </div>\n</div>\n\n<!-- P\u00c1GINA 4: T\u00c9RMINOS -->\n<div class=\"page\" style=\"overflow:hidden;\">\n  <div style=\"position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#F39200,transparent);pointer-events:none;\"></div>\n  <div style=\"position:absolute;bottom:80px;right:0;width:250px;height:150px;pointer-events:none;opacity:0.04;\">\n    <svg viewBox=\"0 0 250 150\" xmlns=\"http://www.w3.org/2000/svg\" style=\"width:100%;height:100%\">\n      <polygon points=\"0,150 70,40 140,90 210,10 250,50 250,150\" fill=\"#1c1c1e\"/>\n      <polyline points=\"0,100 70,40 140,90 210,10 250,50\" stroke=\"#F39200\" stroke-width=\"1\" fill=\"none\" opacity=\"5\"/>\n    </svg>\n  </div>\n  <div style=\"display:flex;justify-content:space-between;align-items:center;margin-bottom:48px;padding-bottom:24px;border-bottom:2px solid #F39200;\">\n    <div style=\"font-size:13px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#1c1c1e;\">NOMAND STUDIO</div>\n    <div style=\"font-size:11px;color:#6c6c70;\">T\u00e9rminos y condiciones</div>\n  </div>\n  <div style=\"font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#F39200;font-weight:700;margin-bottom:8px;\">T\u00c9RMINOS Y CONDICIONES</div>\n  <div style=\"font-size:32px;font-weight:700;font-style:italic;color:#1c1c1e;margin-bottom:32px;\">Antes de comenzar</div>\n  <div style=\"font-size:13px;color:#6c6c70;line-height:2.2;white-space:pre-line;\">");
-  htmlParts.push(String(TERMINOS));
-  htmlParts.push("</div>\n  <div style=\"margin-top:64px;display:grid;grid-template-columns:1fr 1fr;gap:40px;\">\n    <div><div style=\"height:1px;background:#1c1c1e;margin-bottom:8px;\"></div><div style=\"font-size:12px;color:#6c6c70;\">Firma del cliente</div><div style=\"font-size:13px;color:#1c1c1e;margin-top:4px;\">");
-  htmlParts.push(String(cliente));
-  htmlParts.push("</div></div>\n    <div><div style=\"height:1px;background:#1c1c1e;margin-bottom:8px;\"></div><div style=\"font-size:12px;color:#6c6c70;\">Nomand Studio</div><div style=\"font-size:13px;color:#1c1c1e;margin-top:4px;\">nomand.studio@gmail.com</div></div>\n  </div>\n  <div style=\"margin-top:64px;text-align:center;padding-top:32px;border-top:0.5px solid #f0eeea;\">\n    <div style=\"font-size:11px;color:#aeaeb2;letter-spacing:0.1em;\">NOMAND STUDIO \u00b7 nomand.studio@gmail.com \u00b7 55 7875 0062 \u00b7 @nomand.studio</div>\n    <div style=\"font-size:11px;color:#F39200;margin-top:6px;font-style:italic;\">Cotizaci\u00f3n v\u00e1lida por 15 d\u00edas \u00b7 ");
-  htmlParts.push(String(hoy));
-  htmlParts.push("</div>\n  </div>\n</div>\n\n<script>window.onload=function(){window.print();}</script>\n</body></html>");
-  const html = htmlParts.join("");
-('', '_blank');
-  win.document.write(html);
-  win.document.close();
+  function logoBlock(light) {
+    var nameColor = light ? '#1c1c1e' : 'rgba(255,255,255,0.7)';
+    return '<div style="display:flex;align-items:center;gap:10px;">'
+      + '<img src="'+LOGO+'" style="width:36px;height:36px;object-fit:contain;">'
+      + '<span style="font-size:10px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:'+nameColor+';">NOMAND STUDIO</span>'
+      + '</div>';
+  }
+
+  function pageHdr(label, light) {
+    var border = light ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.12)';
+    var subColor = light ? '#6c6c70' : 'rgba(255,255,255,0.45)';
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:16px;border-bottom:1px solid '+border+';margin-bottom:40px;">'
+      + logoBlock(light)
+      + '<div style="text-align:right;">'
+      + '<div style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:'+subColor+';">'+label+'</div>'
+      + '<div style="font-size:11px;color:'+subColor+';margin-top:3px;">'+proyecto+'</div>'
+      + '</div>'
+      + '</div>';
+  }
+
+  var h = '';
+  h += '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+css+'</style></head><body>';
+
+  // ── PÁGINA 1: PORTADA ──
+  h += '<div class="page">';
+  h += '<div class="mtn"></div><div class="ov-dark"></div>';
+  h += '<div class="inner" style="justify-content:space-between;align-items:center;text-align:center;">';
+  // Logo top
+  h += '<div style="display:flex;flex-direction:column;align-items:center;gap:8px;">';
+  h += '<img src="'+LOGO+'" style="width:60px;height:60px;object-fit:contain;">';
+  h += '<span style="font-size:10px;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;color:rgba(255,255,255,0.6);">NOMAND STUDIO</span>';
+  h += '</div>';
+  // Center tagline - NO glass
+  h += '<div style="text-align:center;">';
+  h += '<div class="lbl-w" style="margin-bottom:28px;">COTIZACI\u00d3N DE SERVICIOS</div>';
+  h += '<div style="font-size:54px;font-weight:700;font-style:italic;color:white;line-height:1.1;margin-bottom:4px;">Exploramos ideas,</div>';
+  h += '<div style="font-size:54px;font-weight:700;font-style:italic;line-height:1.1;color:white;">creamos <span style="color:#F39200;">identidad.</span></div>';
+  h += '</div>';
+  // Bottom social - glass pill
+  h += '<div class="glass-d" style="display:inline-flex;align-items:center;gap:20px;padding:13px 28px;">';
+  h += '<span style="font-size:11px;color:rgba(255,255,255,0.75);">@nomand.studio</span>';
+  h += '<span style="font-size:6px;color:rgba(255,255,255,0.25);">\u25cf</span>';
+  h += '<span style="font-size:11px;color:rgba(255,255,255,0.75);">55 7875 0062</span>';
+  h += '<span style="font-size:6px;color:rgba(255,255,255,0.25);">\u25cf</span>';
+  h += '<span style="font-size:11px;color:rgba(255,255,255,0.75);">nomand.studio@gmail.com</span>';
+  h += '</div>';
+  h += '</div></div>';
+
+  // ── PÁGINA 2: PROPUESTA ──
+  h += '<div class="page">';
+  h += '<div class="mtn"></div><div class="ov-light"></div>';
+  h += '<div class="inner">';
+  h += pageHdr('Propuesta', true);
+  // Client card
+  h += '<div class="glass-w" style="padding:24px 32px;text-align:center;margin-bottom:32px;">';
+  h += '<div style="font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:#aeaeb2;font-weight:700;margin-bottom:8px;">PREPARADO PARA</div>';
+  h += '<div style="font-size:26px;font-weight:700;color:#1c1c1e;margin-bottom:3px;">'+cliente+'</div>';
+  h += '<div style="font-size:13px;color:#6c6c70;margin-bottom:3px;">para <span style="font-weight:600;color:#1c1c1e;">'+proyecto+'</span></div>';
+  if (correo) h += '<div style="font-size:13px;color:#6c6c70;">'+correo+'</div>';
+  if (fechaStr) h += '<div style="font-size:13px;color:#F39200;margin-top:8px;font-weight:600;">Entrega estimada: '+fechaStr+'</div>';
+  h += '</div>';
+  // Package
+  h += '<div style="text-align:center;margin-bottom:28px;">';
+  h += '<div class="lbl-o" style="margin-bottom:10px;">NUESTRA PROPUESTA</div>';
+  h += '<div style="font-size:32px;font-weight:700;font-style:italic;color:#1c1c1e;">'+(paqueteNombre||'Servicios a medida')+'</div>';
+  if (paqueteDesc) h += '<div style="font-size:13px;color:#4a4a4a;margin-top:8px;max-width:500px;margin-left:auto;margin-right:auto;line-height:1.6;">'+paqueteDesc+'</div>';
+  h += '</div>';
+  // Services
+  h += '<div class="lbl-o" style="text-align:center;margin-bottom:16px;">QU\u00c9 VAMOS A HACER</div>';
+  serviciosDetalle.forEach(function(s) {
+    h += '<div class="glass-w" style="display:flex;gap:14px;align-items:flex-start;padding:14px 18px;margin-bottom:8px;">';
+    h += '<div style="width:7px;height:7px;border-radius:50%;background:#F39200;flex-shrink:0;margin-top:5px;"></div>';
+    h += '<div><div style="font-size:13px;font-weight:700;color:#1c1c1e;margin-bottom:2px;">'+s.nombre+'</div>';
+    h += '<div style="font-size:12px;color:#4a4a4a;line-height:1.5;">'+s.desc+'</div></div>';
+    h += '</div>';
+  });
+  if (notas) {
+    h += '<div style="margin-top:14px;padding:16px 20px;background:rgba(243,146,0,0.1);border-left:3px solid #F39200;border-radius:10px;">';
+    h += '<div class="lbl-o" style="margin-bottom:5px;">NOTAS</div>';
+    h += '<div style="font-size:12px;color:#4a4a4a;line-height:1.5;">'+notas+'</div>';
+    h += '</div>';
+  }
+  h += '</div></div>';
+
+  // ── PÁGINA 3: PROCESO ──
+  h += '<div class="page">';
+  h += '<div class="mtn"></div><div class="ov-dark"></div>';
+  h += '<div class="inner">';
+  h += pageHdr('Proceso', false);
+  h += '<div style="text-align:center;margin-bottom:40px;">';
+  h += '<div class="lbl-w" style="margin-bottom:10px;">C\u00d3MO TRABAJAMOS</div>';
+  h += '<div style="font-size:36px;font-weight:700;font-style:italic;color:white;line-height:1.1;">Tu proyecto, paso a paso</div>';
+  h += '</div>';
+  PROCESO.forEach(function(p,i) {
+    var last = i===PROCESO.length-1;
+    h += '<div class="glass-d" style="display:flex;gap:18px;align-items:flex-start;padding:18px 22px;margin-bottom:'+(last?'0':'10px')+';text-align:left;">';
+    h += '<div style="width:42px;height:42px;border-radius:50%;border:1px solid rgba(243,146,0,0.35);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#F39200;flex-shrink:0;">'+p.paso+'</div>';
+    h += '<div style="padding-top:6px;"><div style="font-size:14px;font-weight:700;color:white;margin-bottom:3px;">'+p.titulo+'</div>';
+    h += '<div style="font-size:11px;color:#F39200;font-weight:600;margin-bottom:5px;">'+p.tiempo+'</div>';
+    h += '<div style="font-size:12px;color:rgba(255,255,255,0.55);line-height:1.5;">'+p.desc+'</div></div>';
+    h += '</div>';
+  });
+  h += '<div class="glass-d" style="text-align:center;padding:24px 32px;margin-top:14px;">';
+  h += '<div class="lbl-w" style="margin-bottom:8px;">NUESTRO COMPROMISO</div>';
+  h += '<div style="font-size:16px;font-style:italic;font-weight:300;color:white;line-height:1.6;">Exploramos ideas, creamos identidad.<br>Tu marca merece ser memorable.</div>';
+  h += '</div>';
+  h += '</div></div>';
+
+  // ── PÁGINA 4: INVERSIÓN ──
+  h += '<div class="page">';
+  h += '<div class="mtn"></div><div class="ov-light"></div>';
+  h += '<div class="inner">';
+  h += pageHdr('Inversi\u00f3n', true);
+  h += '<div style="text-align:center;margin-bottom:28px;">';
+  h += '<div class="lbl-o" style="margin-bottom:10px;">TU INVERSI\u00d3N</div>';
+  h += '<div style="font-size:32px;font-weight:700;font-style:italic;color:#1c1c1e;">'+(paqueteNombre||'Servicios seleccionados')+'</div>';
+  h += '</div>';
+  serviciosDetalle.forEach(function(s) {
+    h += '<div class="glass-w" style="display:flex;justify-content:space-between;align-items:center;padding:12px 18px;margin-bottom:7px;">';
+    h += '<div style="font-size:13px;font-weight:600;color:#1c1c1e;">'+s.nombre+'</div>';
+    if (cotizSeleccion.tipo==='paquete') {
+      h += '<div style="font-size:11px;color:#F39200;font-weight:700;background:rgba(243,146,0,0.1);padding:3px 12px;border-radius:100px;">Incluido</div>';
+    } else {
+      h += '<div style="font-size:13px;font-weight:700;color:#1c1c1e;">$'+s.precio_unit.toLocaleString()+'</div>';
+    }
+    h += '</div>';
+  });
+  // Total
+  h += '<div style="background:rgba(0,0,0,0.78);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:32px;text-align:center;margin-top:20px;">';
+  if (cotizSeleccion.tipo==='paquete' && cotizSeleccion.paqueteId) {
+    var pk2 = PAQUETES.find(function(p){return p.id===cotizSeleccion.paqueteId;});
+    if (pk2) h += '<div style="font-size:12px;color:#34c759;margin-bottom:14px;font-weight:600;">\u2713 Ahorras $'+pk2.ahorro.toLocaleString()+' con este paquete</div>';
+  }
+  h += '<div style="display:flex;justify-content:center;gap:40px;margin-bottom:18px;">';
+  h += '<div><div style="font-size:9px;color:rgba(255,255,255,0.35);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:5px;">Subtotal</div><div style="font-size:19px;font-weight:700;color:white;">$'+subtotal.toLocaleString()+'</div></div>';
+  h += '<div style="width:1px;background:rgba(255,255,255,0.08);"></div>';
+  h += '<div><div style="font-size:9px;color:rgba(255,255,255,0.35);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:5px;">IVA 16%</div><div style="font-size:19px;font-weight:700;color:white;">$'+iva.toLocaleString()+'</div></div>';
+  h += '</div>';
+  h += '<div style="width:40px;height:1px;background:#F39200;margin:0 auto 16px;opacity:0.6;"></div>';
+  h += '<div style="font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:6px;">TOTAL</div>';
+  h += '<div style="font-size:50px;font-weight:700;color:#F39200;line-height:1;">$'+total.toLocaleString()+'</div>';
+  h += '<div style="font-size:11px;color:rgba(255,255,255,0.25);margin-top:6px;">Pesos mexicanos \u00b7 IVA incluido</div>';
+  h += '</div>';
+  h += '</div></div>';
+
+  // ── PÁGINA 5: FORMAS DE PAGO ──
+  h += '<div class="page">';
+  h += '<div class="mtn"></div><div class="ov-dark"></div>';
+  h += '<div class="inner">';
+  h += pageHdr('Formas de pago', false);
+  h += '<div style="text-align:center;margin-bottom:36px;">';
+  h += '<div class="lbl-w" style="margin-bottom:10px;">FORMAS DE PAGO</div>';
+  h += '<div style="font-size:36px;font-weight:700;font-style:italic;color:white;">Flexible para ti</div>';
+  h += '</div>';
+  var pagos = [
+    {num:'01', t:'Anticipo y liquidaci\u00f3n', d:'50% al inicio del proyecto y 50% contra entrega final. La opci\u00f3n m\u00e1s recomendada.'},
+    {num:'02', t:'Pago en tres partes', d:'33% al inicio, 33% a la mitad del proyecto y 34% contra entrega final.'},
+    {num:'03', t:'Pago total por adelantado', d:'100% al inicio. Aplica un descuento especial del 5% sobre el total.'},
+    {num:'04', t:'Mensualidades', d:'Para servicios recurrentes de redes o marketing. Se cobra al inicio de cada mes.'}
+  ];
+  pagos.forEach(function(p) {
+    h += '<div class="glass-d" style="display:flex;gap:18px;align-items:flex-start;padding:18px 22px;margin-bottom:10px;text-align:left;">';
+    h += '<div style="font-size:22px;font-weight:700;font-style:italic;color:rgba(243,146,0,0.35);flex-shrink:0;line-height:1;">'+p.num+'</div>';
+    h += '<div><div style="font-size:14px;font-weight:700;color:white;margin-bottom:4px;">'+p.t+'</div>';
+    h += '<div style="font-size:12px;color:rgba(255,255,255,0.5);line-height:1.5;">'+p.d+'</div></div>';
+    h += '</div>';
+  });
+  h += '<div class="glass-d" style="text-align:center;padding:16px 28px;margin-top:8px;">';
+  h += '<div style="font-size:12px;color:rgba(255,255,255,0.6);line-height:1.7;">Transferencia bancaria \u00b7 Dep\u00f3sito \u00b7 Tarjeta de cr\u00e9dito/d\u00e9bito<br><span style="color:#F39200;font-weight:600;">Todos los precios en pesos mexicanos (MXN)</span></div>';
+  h += '</div>';
+  h += '</div></div>';
+
+  // ── PÁGINA 6: TÉRMINOS ──
+  h += '<div class="page">';
+  h += '<div class="mtn"></div><div class="ov-light"></div>';
+  h += '<div class="inner">';
+  h += pageHdr('T\u00e9rminos', true);
+  h += '<div style="text-align:center;margin-bottom:24px;">';
+  h += '<div class="lbl-o" style="margin-bottom:10px;">T\u00c9RMINOS Y CONDICIONES</div>';
+  h += '<div style="font-size:30px;font-weight:700;font-style:italic;color:#1c1c1e;">Antes de comenzar</div>';
+  h += '</div>';
+  h += '<div class="glass-w" style="padding:24px 28px;flex:1;">';
+  h += '<div style="font-size:11px;color:#3a3a3a;line-height:2;white-space:pre-line;">'+TERMINOS+'</div>';
+  h += '</div>';
+  h += '<div style="text-align:center;margin-top:20px;">';
+  h += '<div style="font-size:10px;color:#aeaeb2;letter-spacing:0.08em;">NOMAND STUDIO \u00b7 @nomand.studio \u00b7 nomand.studio@gmail.com \u00b7 55 7875 0062</div>';
+  h += '<div style="font-size:10px;color:#F39200;margin-top:3px;font-style:italic;">Cotizaci\u00f3n v\u00e1lida por 15 d\u00edas \u00b7 '+hoy+'</div>';
+  h += '</div>';
+  h += '</div></div>';
+
+  h += '<scr'+'ipt>window.onload=function(){window.print();}</scr'+'ipt>';
+  h += '</body></html>';
+
+  // Download as HTML file that auto-prints to PDF
+  var blob = new Blob([h], {type: 'text/html;charset=utf-8'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'Cotizacion_' + proyecto.replace(/\s+/g, '_') + '.html';
+  a.click();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  notify('✅ Descargando cotización. Ábrela y usa Cmd+P / Ctrl+P para guardar como PDF.');
 }
+
 
 async function enviarCotizacion() {
   const cliente = document.getElementById('cq-cliente')?.value.trim();
