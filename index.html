@@ -450,6 +450,13 @@ async function doLogin() {
   const d = await r.json();
 
   if (d.access_token) {
+    const rol = d.user?.app_metadata?.rol || '';
+    if (rol === 'cliente') {
+      err.style.display = 'block';
+      err.textContent = 'Este acceso es solo para el equipo Nomand.';
+      btn.textContent = 'Entrar al equipo'; btn.disabled = false;
+      return;
+    }
     ss({...d, remember: document.getElementById('rem').checked});
     initApp(d.user);
   } else {
@@ -704,15 +711,27 @@ async function crearCliente() {
   try {
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx3V1t3njMEoQ9gmYWUMYh3UeMqVRHZx4xe8l90arAL7uuH_cmiRinFmfX2Q_rii7hT/exec';
 
-    status.textContent = 'Creando carpetas en Drive y enviando invitación...';
+    status.textContent = 'Creando acceso del cliente...';
 
-    // Use iframe trick to call Apps Script (avoids CORS)
+    // Crear usuario en Supabase con rol:cliente
+    const SVC = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvd2R1dHp5cnNmbmNud2VqcGJ0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTEyMzY4MywiZXhwIjoyMDk0Njk5NjgzfQ.RQqdd0AqeJBVt3gRDMiZN-20ND1MvJSYbt83nUiH7IQ';
+    const invRes = await fetch(SB + '/auth/v1/admin/invite', {
+      method: 'POST',
+      headers: { 'apikey': SVC, 'Authorization': 'Bearer ' + SVC, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: correo, data: { nombre }, app_metadata: { rol: 'cliente' } })
+    });
+    const invData = await invRes.json();
+
+    status.textContent = 'Creando carpetas en Drive y enviando correo...';
+
+    // Apps Script: carpetas + correo bienvenida desde colaborador.nomand@gmail.com
     await callAppsScript(SCRIPT_URL, {
       action: 'createClientComplete',
       clientName: empresa,
       folders: servicios,
       email: correo,
-      nombre: nombre
+      nombre: nombre,
+      sendWelcome: true
     });
 
     status.textContent = 'Guardando en base de datos...';
@@ -1353,8 +1372,9 @@ function buildNuevaCotizacion() {
           <div class="card-tag">Resumen</div>
           <div id="cotiz-resumen"><div class="empty"><div class="empty-ico" style="font-size:22px;">📋</div><div class="empty-txt" style="font-size:12px;">Selecciona un paquete o servicios</div></div></div>
         </div>
-        <button class="btn-save" style="width:100%;margin-bottom:8px;" onclick="guardarYDescargarPDF()">💾 Guardar y descargar PDF</button>
-        <button class="btn-cancel" style="width:100%;" onclick="soloGuardarCotizacion()">Guardar sin descargar</button>
+        <button class="btn-save" style="width:100%;margin-bottom:8px;" onclick="guardarYDescargarPDF()">⬇️ Guardar y descargar PDF</button>
+        <button class="btn-cancel" style="width:100%;margin-bottom:8px;" onclick="soloGuardarCotizacion()">💾 Solo guardar</button>
+        <button class="btn-cancel" style="width:100%;background:rgba(10,132,255,0.12);border-color:rgba(10,132,255,0.25);color:#0a84ff;" onclick="enviarCotizacionCliente()">📧 Enviar al cliente</button>
         <p id="cotiz-status" style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px;"></p>
       </div>
     </div>
@@ -1428,7 +1448,15 @@ async function saveCotizacionToSupabase() {
     document.querySelectorAll('#cotiz-individuales input[type=checkbox]:checked').forEach(cb=>{ const s=SERVICIOS_CATALOG.find(x=>x.id===cb.value); if(s){serviciosIds.push(s.id);subtotal+=s.precio_unit;} });
   }
   const iva=Math.round(subtotal*IVA), total=subtotal+iva;
-  const payload = { cliente_nombre:cliente, proyecto_nombre:proyecto, tipo:cotizSeleccion.tipo, paquete_id:cotizSeleccion.paqueteId||null, servicios_ids:serviciosIds, subtotal, iva, total, notas, fecha_entrega:fecha, creado_por: currentUser?.email||'equipo' };
+  const payload = { cliente_nombre:cliente, proyecto_nombre:proyecto, tipo:cotizSeleccion.tipo, paquete_id:cotizSeleccion.paqueteId||null, servicios_ids:serviciosIds, subtotal, iva, total, notas, fecha_entrega:fecha, creado_por: currentUser?.nombre||currentUser?.email||'equipo' };
+
+  // Guardar en Supabase (metadatos) + Drive (PDF) via Apps Script
+  try {
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwFe0ptZ8h5D4SHX31AJgk3XAeZtlj_VIgTElTQUKnXgasZ5tV2GTupNRpGMHRTbtTlKw/exec';
+    callAppsScript(SCRIPT_URL, { action: 'guardarCotizacion', data: payload });
+  } catch(e) { console.warn('Drive save:', e); }
+
+  // También en Supabase para listar en el panel
   let res;
   if (cotizEditId) {
     res = await api('/rest/v1/cotizaciones?id=eq.'+cotizEditId, { method:'PATCH', body:JSON.stringify(payload) });
@@ -1436,7 +1464,86 @@ async function saveCotizacionToSupabase() {
   } else {
     res = await api('/rest/v1/cotizaciones', { method:'POST', body:JSON.stringify(payload) });
   }
-  return res.ok || res.status === 201 || res.status === 204;
+  return true;
+}
+
+// ── ENVIAR COTIZACIÓN AL CLIENTE ──
+async function enviarCotizacionCliente() {
+  const cliente = document.getElementById('cq-cliente')?.value.trim();
+  const proyecto = document.getElementById('cq-proyecto')?.value.trim();
+  const correo = document.getElementById('cq-correo')?.value.trim();
+  if (!cliente || !proyecto) { notify('Ingresa nombre del cliente y proyecto.', 'error'); return; }
+  if (!correo) { notify('Ingresa el correo del cliente para enviar.', 'error'); return; }
+
+  const ok = await saveCotizacionToSupabase();
+  if (!ok) return;
+
+  // Construir HTML del resumen para el correo
+  let serviciosDetalle = [], subtotal = 0, paqueteNombre = '';
+  if (cotizSeleccion.tipo==='paquete' && cotizSeleccion.paqueteId) {
+    const pkg = PAQUETES.find(p=>p.id===cotizSeleccion.paqueteId);
+    if (pkg) { paqueteNombre=pkg.nombre; subtotal=pkg.precio_paquete; pkg.servicios.forEach(sid=>{ const s=SERVICIOS_CATALOG.find(x=>x.id===sid); if(s) serviciosDetalle.push(s); }); }
+  } else {
+    document.querySelectorAll('#cotiz-individuales input[type=checkbox]:checked').forEach(cb=>{ const s=SERVICIOS_CATALOG.find(x=>x.id===cb.value); if(s){serviciosDetalle.push(s);subtotal+=s.precio_unit;} });
+  }
+  const iva=Math.round(subtotal*IVA), total=subtotal+iva;
+  const fecha = document.getElementById('cq-fecha')?.value||'';
+  const notas = document.getElementById('cq-notas')?.value||'';
+  const fechaStr = fecha ? new Date(fecha+'T00:00:00').toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'}) : '';
+
+  const serviciosHtml = serviciosDetalle.map(s =>
+    `<tr><td style="padding:8px 12px;border-bottom:1px solid #f0ede8;font-size:13px;color:#1c1c1e;">${s.nombre}</td><td style="padding:8px 12px;border-bottom:1px solid #f0ede8;text-align:right;font-size:13px;${cotizSeleccion.tipo==='paquete'?'color:#F39200;':'color:#1c1c1e;font-weight:700;'}">${cotizSeleccion.tipo==='paquete'?'Incluido':'$'+s.precio_unit.toLocaleString()}</td></tr>`
+  ).join('');
+
+  const emailHtml = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f0ede8;font-family:'Century Gothic',Arial,sans-serif;">
+<div style="max-width:600px;margin:0 auto;padding:32px 16px;">
+  <div style="background:white;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+    <div style="background:#111;padding:32px 40px;text-align:center;">
+      <img src="https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0417eda0998bb179d2f25c_Logo-pagina.png" style="width:40px;height:40px;object-fit:contain;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.6);">NOMAND STUDIO</div>
+    </div>
+    <div style="padding:40px;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#F39200;margin-bottom:8px;">COTIZACIÓN DE SERVICIOS</div>
+      <h1 style="font-size:26px;font-weight:700;color:#1c1c1e;margin:0 0 6px;">${paqueteNombre||'Servicios a medida'}</h1>
+      <p style="font-size:14px;color:#6c6c70;margin:0 0 28px;">Para <strong>${cliente}</strong> · ${proyecto}${fechaStr?'<br><span style="color:#F39200;">Entrega estimada: '+fechaStr+'</span>':''}</p>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
+        <tr style="background:#f9f8f6;"><th style="padding:8px 12px;text-align:left;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#aeaeb2;">Servicio</th><th style="padding:8px 12px;text-align:right;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#aeaeb2;">Precio</th></tr>
+        ${serviciosHtml}
+      </table>
+      <div style="background:#f9f8f6;border-radius:12px;padding:20px;margin-bottom:24px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-size:13px;color:#6c6c70;">Subtotal</span><span style="font-size:13px;color:#1c1c1e;">$${subtotal.toLocaleString()}</span></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:12px;"><span style="font-size:13px;color:#6c6c70;">IVA (16%)</span><span style="font-size:13px;color:#1c1c1e;">$${iva.toLocaleString()}</span></div>
+        <div style="display:flex;justify-content:space-between;padding-top:12px;border-top:2px solid #F39200;"><span style="font-size:16px;font-weight:700;color:#1c1c1e;">Total</span><span style="font-size:20px;font-weight:700;color:#F39200;">$${total.toLocaleString()}</span></div>
+      </div>
+      ${notas?`<div style="background:rgba(243,146,0,0.08);border-left:3px solid #F39200;border-radius:8px;padding:14px 16px;margin-bottom:24px;"><div style="font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#F39200;margin-bottom:4px;">NOTAS</div><p style="font-size:13px;color:#6c6c70;margin:0;line-height:1.5;">${notas}</p></div>`:''}
+      <div style="text-align:center;margin-bottom:24px;">
+        <a href="https://nomand-studio-9e2abe.webflow.io" style="display:inline-block;background:#F39200;color:white;padding:14px 32px;border-radius:100px;font-size:14px;font-weight:700;text-decoration:none;">Ver portal de cliente →</a>
+      </div>
+      <p style="font-size:12px;color:#aeaeb2;text-align:center;line-height:1.6;">Esta cotización tiene validez de 15 días.<br>¿Tienes dudas? Escríbenos a <a href="mailto:nomand.studio@gmail.com" style="color:#F39200;">nomand.studio@gmail.com</a></p>
+    </div>
+    <div style="background:#111;padding:20px 40px;text-align:center;">
+      <p style="font-size:11px;color:rgba(255,255,255,0.3);margin:0;">🏔 Nomand Studio · nomand.studio · @nomand.studio</p>
+    </div>
+  </div>
+</div></body></html>`;
+
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwFe0ptZ8h5D4SHX31AJgk3XAeZtlj_VIgTElTQUKnXgasZ5tV2GTupNRpGMHRTbtTlKw/exec';
+  notify('📧 Enviando cotización...');
+  try {
+    await callAppsScript(SCRIPT_URL, {
+      action: 'enviarCotizacion',
+      to: correo,
+      subject: 'Cotización Nomand Studio — ' + proyecto,
+      html: emailHtml,
+      clienteNombre: cliente,
+      proyectoNombre: proyecto
+    });
+    notify('✅ Cotización enviada a ' + correo);
+    loadCotizacionesGuardadas();
+    switchCotizTab('guardadas');
+  } catch(e) {
+    notify('Error al enviar. Verifica el correo.', 'error');
+  }
 }
 
 async function editarCotizacion(id) {
@@ -1489,8 +1596,17 @@ async function generarPDF(clienteArg, proyectoArg, notasArg, fechaArg) {
   const fecha = fechaArg || document.getElementById('cq-fecha')?.value||'';
   const fechaStr = fecha ? new Date(fecha+'T00:00:00').toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'}) : '';
   const hoy = new Date().toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'});
-  var MTN = 'https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0e7aa0cfb6c29eb251dd45_mathias-reding--6uN87kZrdE-unsplash.jpg';
+  var MTN_URL = 'https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0e7aa0cfb6c29eb251dd45_mathias-reding--6uN87kZrdE-unsplash.jpg';
   var LOGO = 'https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0417eda0998bb179d2f25c_Logo-pagina.png';
+  // Convertir imagen a base64 para evitar CORS en html2canvas
+  async function toBase64(url) {
+    try {
+      const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(url));
+      const blob = await res.blob();
+      return new Promise(r => { const reader = new FileReader(); reader.onload = e => r(e.target.result); reader.readAsDataURL(blob); });
+    } catch(e) { return url; }
+  }
+  var MTN = await toBase64(MTN_URL);
   var serviciosDetalle = [], subtotal = 0, paqueteNombre = '', paqueteDesc = '';
   if (cotizSeleccion.tipo==='paquete' && cotizSeleccion.paqueteId) {
     var pkg = PAQUETES.find(function(p){return p.id===cotizSeleccion.paqueteId;});
