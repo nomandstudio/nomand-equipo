@@ -1,0 +1,1844 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Equipo — Nomand Studio</title>
+<link rel="stylesheet" href="https://use.typekit.net/dac6yfv.css">
+<style>
+:root {
+  --orange: #F39200;
+  --orange-10: rgba(243,146,0,0.10);
+  --orange-20: rgba(243,146,0,0.22);
+  --bg: #111111;
+  --card: rgba(255,255,255,0.06);
+  --card-border: rgba(255,255,255,0.10);
+  --text: rgba(255,255,255,0.92);
+  --text2: rgba(255,255,255,0.5);
+  --text3: rgba(255,255,255,0.28);
+  --green: #34c759;
+  --green-10: rgba(52,199,89,0.12);
+  --red: #ff453a;
+  --red-10: rgba(255,69,58,0.12);
+  --blue: #0a84ff;
+  --blue-10: rgba(10,132,255,0.12);
+  --shadow: 0 2px 16px rgba(0,0,0,0.3), 0 1px 4px rgba(0,0,0,0.2);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.25);
+  --blur: blur(24px) saturate(1.6);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'century-gothic','Century Gothic',sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  background-image:
+    radial-gradient(ellipse at 15% 15%, rgba(243,146,0,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 85% 85%, rgba(243,146,0,0.04) 0%, transparent 50%);
+}
+
+/* LOGIN */
+#login-screen {
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: var(--bg);
+  position:relative;
+  overflow:hidden;
+}
+#login-screen::before {
+  content:'';
+  position:absolute;
+  width:600px;height:600px;
+  top:-150px;right:-150px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(243,146,0,0.08) 0%,transparent 65%);
+  pointer-events:none;
+}
+#login-screen::after {
+  content:'';
+  position:absolute;
+  width:400px;height:400px;
+  bottom:-100px;left:-100px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(243,146,0,0.05) 0%,transparent 65%);
+  pointer-events:none;
+}
+
+.login-card {
+  width:100%;max-width:400px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius:28px;
+  padding:44px 40px;
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  box-shadow: var(--shadow-lg), inset 0 1px 1px rgba(255,255,255,0.08);
+  position:relative;z-index:1;
+}
+.l-logo { display:flex;align-items:center;gap:9px;margin-bottom:32px; }
+.l-logo img { width:26px;height:26px;object-fit:contain; }
+.l-logo span { font-size:12px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--text); }
+.l-badge { display:inline-flex;align-items:center;gap:5px;padding:3px 10px;background:var(--orange-10);border:1px solid var(--orange-20);border-radius:100px;font-size:10px;font-weight:700;color:var(--orange);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:16px; }
+.l-title { font-size:24px;font-weight:300;color:var(--text);margin-bottom:4px; }
+.l-sub { font-size:13px;color:var(--text2);margin-bottom:28px;line-height:1.5; }
+.f-group { margin-bottom:14px; }
+.f-group label { display:block;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text3);font-weight:700;margin-bottom:6px; }
+.f-group input { width:100%;padding:12px 15px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:11px;font-family:inherit;font-size:14px;color:var(--text);outline:none;transition:border-color 0.2s,box-shadow 0.2s; }
+.f-group input:focus { border-color:var(--orange);box-shadow:0 0 0 3px rgba(243,146,0,0.15);background:rgba(255,255,255,0.08); }
+.f-group input::placeholder { color:var(--text3); }
+.remember { display:flex;align-items:center;gap:7px;margin-bottom:18px;margin-top:2px; }
+.remember input { accent-color:var(--orange); }
+.remember label { font-size:12px;color:var(--text2);cursor:pointer; }
+.btn-main { width:100%;padding:13px;background:var(--orange);border:none;border-radius:100px;font-family:inherit;font-size:14px;font-weight:700;color:#fff;cursor:pointer;transition:opacity 0.2s,transform 0.15s;box-shadow:0 4px 20px rgba(243,146,0,0.35); }
+.btn-main:hover { opacity:0.92;transform:translateY(-1px); }
+.btn-main:disabled { opacity:0.6;cursor:not-allowed;transform:none; }
+.l-err { font-size:12px;color:var(--red);text-align:center;margin-top:10px;display:none; }
+.l-help { font-size:11px;color:var(--text3);text-align:center;margin-top:16px;line-height:1.6; }
+
+/* TOPBAR */
+#app-screen { display:none; }
+.topbar {
+  position:sticky;top:0;z-index:50;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 32px;height:56px;
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border-bottom:1px solid rgba(255,255,255,0.08);
+  box-shadow: inset 0 -1px 0 rgba(255,255,255,0.05);
+}
+.tb-left { display:flex;align-items:center;gap:16px; }
+.tb-logo { display:flex;align-items:center;gap:8px; }
+.tb-logo img { width:20px;height:20px;object-fit:contain; }
+.tb-logo span { font-size:11px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--text); }
+.tb-badge { padding:3px 10px;background:var(--orange-10);border:1px solid var(--orange-20);border-radius:100px;font-size:10px;font-weight:700;color:var(--orange);letter-spacing:0.06em;text-transform:uppercase; }
+.tb-right { display:flex;align-items:center;gap:10px; }
+.tb-user { display:flex;align-items:center;gap:8px;padding:5px 12px 5px 6px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:100px;backdrop-filter:blur(8px); }
+.tb-av { width:26px;height:26px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;text-transform:uppercase;box-shadow:0 2px 6px rgba(243,146,0,0.3); }
+.tb-uname { font-size:12px;font-weight:700;color:var(--text); }
+.tb-role { font-size:10px;color:var(--text3);letter-spacing:0.06em;text-transform:uppercase; }
+.btn-sm { padding:6px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:100px;font-family:inherit;font-size:12px;color:var(--text2);cursor:pointer;transition:background 0.15s;backdrop-filter:blur(8px); }
+.btn-sm:hover { background:rgba(255,255,255,0.12);color:var(--text); }
+
+/* LAYOUT */
+.app-layout { display:flex;min-height:calc(100vh - 56px); }
+
+/* SIDEBAR */
+.sidebar {
+  width:220px;flex-shrink:0;
+  background: rgba(255,255,255,0.03);
+  border-right:1px solid rgba(255,255,255,0.07);
+  padding:20px 12px;
+  display:flex;flex-direction:column;gap:2px;
+  position:sticky;top:56px;height:calc(100vh - 56px);
+  overflow-y:auto;
+  backdrop-filter: blur(20px);
+}
+.sb-section { font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--text3);font-weight:700;padding:8px 12px 4px;margin-top:8px; }
+.sb-btn { display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:9px;border:none;background:none;font-family:inherit;font-size:13px;color:var(--text2);cursor:pointer;width:100%;text-align:left;transition:all 0.15s; }
+.sb-btn:hover { background:rgba(255,255,255,0.06);color:var(--text); }
+.sb-btn.active { background:rgba(243,146,0,0.12);color:var(--orange);font-weight:700;border:1px solid rgba(243,146,0,0.18); }
+.sb-ico { font-size:15px;width:20px;text-align:center;opacity:0.7; }
+.sb-btn.active .sb-ico { opacity:1; }
+
+/* MAIN */
+.main { flex:1;padding:32px 40px 64px;overflow-x:hidden; }
+
+/* PAGE HEADER */
+.ph { margin-bottom:28px; }
+.ph-label { font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--orange);font-weight:700;margin-bottom:5px; }
+.ph-title { font-size:28px;font-weight:300;color:var(--text); }
+.ph-row { display:flex;align-items:center;justify-content:space-between; }
+
+/* WELCOME CARD */
+.welcome {
+  background: rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:18px;padding:26px 30px;margin-bottom:24px;
+  display:flex;align-items:center;justify-content:space-between;
+  box-shadow:var(--shadow);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  box-shadow: var(--shadow), inset 0 1px 1px rgba(255,255,255,0.06);
+}
+.w-date { font-size:11px;color:var(--text3);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px; }
+.w-title { font-size:21px;font-weight:300;color:var(--text);margin-bottom:3px; }
+.w-sub { font-size:13px;color:var(--text2); }
+.w-badge { display:flex;align-items:center;gap:7px;padding:8px 16px;background:var(--orange-10);border:1px solid var(--orange-20);border-radius:100px;font-size:12px;color:var(--orange);font-weight:700;white-space:nowrap; }
+
+/* GRID */
+.grid-2 { display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px; }
+.grid-3 { display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px; }
+.grid-4 { display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px; }
+
+/* CARD */
+.card { background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:16px;padding:20px 22px;box-shadow:var(--shadow);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);transition:box-shadow 0.2s,transform 0.2s;box-shadow:var(--shadow),inset 0 1px 1px rgba(255,255,255,0.06); }
+.card.clickable:hover { box-shadow:var(--shadow-lg),inset 0 1px 1px rgba(255,255,255,0.06);transform:translateY(-2px);cursor:pointer; }
+.card-tag { font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--orange);font-weight:700;margin-bottom:5px; }
+.card-title { font-size:17px;font-weight:400;color:var(--text);margin-bottom:8px; }
+.card-body { font-size:13px;color:var(--text2);line-height:1.6; }
+.stat-num { font-size:32px;font-weight:700;color:var(--text);margin-bottom:4px; }
+.stat-label { font-size:12px;color:var(--text2); }
+
+/* BADGE */
+.badge { display:inline-flex;align-items:center;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:700; }
+.b-orange { background:var(--orange-10);color:var(--orange); }
+.b-green { background:var(--green-10);color:var(--green); }
+.b-red { background:var(--red-10);color:var(--red); }
+.b-blue { background:var(--blue-10);color:var(--blue); }
+.b-gray { background:rgba(0,0,0,0.06);color:var(--text2); }
+
+/* TABLE */
+.table-wrap { background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);backdrop-filter:var(--blur); }
+.table-head { display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.07); }
+.table-title { font-size:13px;font-weight:700;letter-spacing:0.04em;color:var(--text); }
+table { width:100%;border-collapse:collapse; }
+th { padding:10px 20px;text-align:left;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text3);font-weight:700;border-bottom:1px solid rgba(255,255,255,0.07); }
+td { padding:13px 20px;font-size:13px;color:var(--text);border-bottom:1px solid rgba(255,255,255,0.04); }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:rgba(255,255,255,0.03); }
+.td-btn { padding:5px 12px;border:0.5px solid rgba(255,255,255,0.12);border-radius:8px;background:none;font-family:inherit;font-size:12px;color:var(--text2);cursor:pointer;transition:all 0.15s; }
+.td-btn:hover { background:var(--orange-10);border-color:var(--orange-20);color:var(--orange); }
+
+/* PROGRESS */
+.prog { margin-top:10px; }
+.prog-row { display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:5px; }
+.prog-track { height:4px;background:rgba(255,255,255,0.08);border-radius:100px;overflow:hidden; }
+.prog-fill { height:100%;background:var(--orange);border-radius:100px;transition:width 1s ease; }
+
+/* FORM */
+.form-card { background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:16px;padding:28px;box-shadow:var(--shadow);backdrop-filter:var(--blur); }
+.form-title { font-size:16px;font-weight:700;color:var(--text);margin-bottom:20px; }
+.form-grid { display:grid;grid-template-columns:1fr 1fr;gap:14px; }
+.form-full { grid-column:1/-1; }
+.fg { display:flex;flex-direction:column;gap:5px; }
+.fg label { font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text3);font-weight:700; }
+.fg input,.fg select,.fg textarea {
+  padding:10px 13px;
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:9px;
+  font-family:inherit;font-size:13px;color:var(--text);
+  outline:none;transition:border-color 0.2s,box-shadow 0.2s;
+}
+.fg input:focus,.fg select:focus,.fg textarea:focus { border-color:var(--orange);box-shadow:0 0 0 3px rgba(243,146,0,0.12);background:rgba(255,255,255,0.08); }
+.fg input::placeholder,.fg textarea::placeholder { color:var(--text3); }
+.fg textarea { resize:vertical;min-height:80px; }
+.fg select { cursor:pointer;color-scheme:dark; }
+.form-actions { display:flex;gap:10px;margin-top:20px;justify-content:flex-end; }
+.btn-cancel { padding:10px 20px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:100px;font-family:inherit;font-size:13px;color:var(--text2);cursor:pointer;transition:all 0.15s; }
+.btn-cancel:hover { background:rgba(255,255,255,0.09);color:var(--text); }
+.btn-save { padding:10px 24px;background:var(--orange);border:none;border-radius:100px;font-family:inherit;font-size:13px;font-weight:700;color:#fff;cursor:pointer;box-shadow:0 3px 12px rgba(243,146,0,0.3);transition:opacity 0.2s; }
+.btn-save:hover { opacity:0.9; }
+.btn-save:disabled { opacity:0.6;cursor:not-allowed; }
+
+/* CLIENT DETAIL */
+.client-header { display:flex;align-items:center;gap:16px;margin-bottom:24px; }
+.client-av { width:52px;height:52px;border-radius:14px;background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;text-transform:uppercase;flex-shrink:0; }
+.client-name { font-size:22px;font-weight:400;color:var(--text);margin-bottom:4px; }
+.client-empresa { font-size:13px;color:var(--text2); }
+.back-btn { display:flex;align-items:center;gap:6px;padding:7px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:100px;font-family:inherit;font-size:12px;color:var(--text2);cursor:pointer;margin-bottom:20px;transition:all 0.15s; }
+.back-btn:hover { background:rgba(255,255,255,0.1);color:var(--text); }
+
+/* TABS */
+.tabs { display:flex;gap:4px;background:rgba(255,255,255,0.05);padding:4px;border-radius:11px;width:fit-content;margin-bottom:20px; }
+.tab { padding:7px 16px;border-radius:8px;border:none;background:none;font-family:inherit;font-size:12px;color:var(--text2);cursor:pointer;transition:all 0.15s;font-weight:600; }
+.tab.active { background:rgba(255,255,255,0.1);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.12); }
+
+/* FILES */
+.file-row { display:flex;align-items:center;gap:11px;padding:11px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;margin-bottom:5px;transition:all 0.15s; }
+.file-row:hover { background:rgba(255,255,255,0.07);border-color:rgba(243,146,0,0.2); }
+.f-ico { width:32px;height:32px;border-radius:8px;background:var(--orange-10);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0; }
+.f-name { font-size:13px;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.f-date { font-size:11px;color:var(--text3);flex-shrink:0; }
+.f-actions { display:flex;gap:6px;flex-shrink:0; }
+.f-pub { padding:5px 12px;background:var(--orange-10);border:1px solid var(--orange-20);border-radius:100px;font-size:11px;font-weight:700;color:var(--orange);cursor:pointer;transition:all 0.15s; }
+.f-pub:hover { background:var(--orange);color:#fff; }
+.f-del { padding:5px 10px;background:var(--red-10);border:1px solid rgba(255,69,58,0.2);border-radius:100px;font-size:11px;font-weight:700;color:var(--red);cursor:pointer; }
+
+/* ROLE BADGE */
+.role-owner { background:rgba(255,159,10,0.12);color:#ff9f0a; }
+.role-designer { background:var(--blue-10);color:var(--blue); }
+.role-collab { background:rgba(255,255,255,0.06);color:var(--text2); }
+
+/* EMPTY + SPINNER */
+.empty { text-align:center;padding:48px 20px;color:var(--text3); }
+.empty-ico { font-size:36px;margin-bottom:10px;opacity:0.35; }
+.empty-txt { font-size:14px;line-height:1.6; }
+.spin-wrap { display:flex;align-items:center;justify-content:center;padding:48px;gap:8px;color:var(--text3);font-size:13px; }
+.spinner { width:16px;height:16px;border:2px solid rgba(255,255,255,0.1);border-top-color:var(--orange);border-radius:50%;animation:spin 0.7s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* MODAL */
+.modal { display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center; }
+.modal.active { display:flex; }
+.modal-ov { position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px); }
+.modal-box { position:relative;z-index:1;width:100%;max-width:560px;margin:20px;background:rgba(30,30,30,0.85);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:32px;box-shadow:var(--shadow-lg);backdrop-filter:var(--blur);animation:mIn 0.2s ease; }
+@keyframes mIn { from{opacity:0;transform:scale(0.96) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)} }
+.modal-title { font-size:18px;font-weight:700;color:var(--text);margin-bottom:20px; }
+.modal-close { position:absolute;top:16px;right:16px;background:none;border:none;font-size:18px;color:var(--text3);cursor:pointer; }
+
+/* DROPDOWN MENU */
+.dropdown-menu {
+  display:none;
+  position:fixed;
+  background:#fff;
+  border:1px solid rgba(0,0,0,0.1);
+  border-radius:10px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.12);
+  z-index:9999;
+  min-width:170px;
+  overflow:hidden;
+}
+.dropdown-menu.active { display:block; }
+.dropdown-item {
+  display:block;width:100%;
+  padding:10px 16px;
+  background:none;border:none;
+  font-family:inherit;font-size:13px;
+  color:var(--text);cursor:pointer;
+  text-align:left;
+  transition:background 0.1s;
+}
+.dropdown-item:hover { background:rgba(0,0,0,0.04); }
+.dropdown-item.danger { color:var(--red); border-top:1px solid rgba(0,0,0,0.06); }
+.notif { position:fixed;bottom:24px;right:24px;z-index:9998;display:flex;flex-direction:column;gap:8px; }
+.notif-item { padding:12px 18px;background:var(--text);border-radius:12px;font-size:13px;color:#fff;box-shadow:var(--shadow-lg);animation:notifIn 0.3s ease; }
+.notif-item.success { background:#1c1c1e; }
+@keyframes notifIn { from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)} }
+
+@media(max-width:768px){
+  .topbar{padding:0 16px;}
+  .sidebar{display:none;}
+  .main{padding:20px 16px 48px;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .form-grid{grid-template-columns:1fr;}
+  .welcome{flex-direction:column;gap:14px;align-items:flex-start;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="l-logo">
+      <img src="https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0417eda0998bb179d2f25c_Logo-pagina.png" alt="N" onerror="this.style.display='none'">
+      <span>Nomand Studio</span>
+    </div>
+    <div class="l-badge">🏔 Panel de equipo</div>
+    <div class="l-title">Bienvenido de vuelta</div>
+    <div class="l-sub">Accede con tus credenciales de Nomand.</div>
+    <div class="f-group"><label>Correo</label><input type="email" id="lemail" placeholder="correo@ejemplo.com" autocomplete="email"></div>
+    <div class="f-group"><label>Contraseña</label><input type="password" id="lpass" placeholder="••••••••" autocomplete="current-password"></div>
+    <div class="remember"><input type="checkbox" id="rem"><label for="rem">Recordar mi cuenta</label></div>
+    <button class="btn-main" id="btnlogin" onclick="doLogin()">Entrar al equipo</button>
+    <div class="l-err" id="lerr">Correo o contraseña incorrectos.</div>
+    <div class="l-help">Solo acceso para el equipo Nomand.</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="tb-left">
+      <div class="tb-logo">
+        <img src="https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0417eda0998bb179d2f25c_Logo-pagina.png" alt="" onerror="this.style.display='none'">
+        <span>Nomand</span>
+      </div>
+      <span class="tb-badge">Panel interno</span>
+    </div>
+    <div class="tb-right">
+      <div class="tb-user">
+        <div class="tb-av" id="uav">N</div>
+        <div>
+          <div class="tb-uname" id="uname">-</div>
+          <div class="tb-role" id="urole">-</div>
+        </div>
+      </div>
+      <button class="btn-sm" onclick="doLogout()">Salir</button>
+    </div>
+  </div>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sb-section">Principal</div>
+      <button class="sb-btn active" onclick="goTo('inicio')"><span class="sb-ico">⌂</span> Inicio</button>
+      <button class="sb-btn" onclick="goTo('clientes')"><span class="sb-ico">◈</span> Clientes</button>
+      <div class="sb-section" id="sb-admin-section" style="display:none">Administración</div>
+      <button class="sb-btn" id="sb-nuevo-cliente" style="display:none" onclick="goTo('nuevo-cliente')"><span class="sb-ico">+</span> Nuevo cliente</button>
+      <button class="sb-btn" id="sb-equipo" style="display:none" onclick="goTo('equipo')"><span class="sb-ico">👥</span> Equipo</button>
+      <button class="sb-btn" id="sb-cotiza" style="display:none" onclick="goTo('cotizacion')"><span class="sb-ico">📋</span> Cotización</button>
+    </div>
+
+    <!-- Main content -->
+    <div class="main" id="main-content">
+      <div class="spin-wrap"><div class="spinner"></div> Cargando...</div>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIF -->
+<div class="notif" id="notif"></div>
+
+<!-- DROPDOWN MENUS (rendered here to avoid clipping) -->
+<div id="dropdown-container"></div>
+
+<script>
+const SB = 'https://dowdutzyrsfncnwejpbt.supabase.co';
+const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvd2R1dHp5cnNmbmNud2VqcGJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxMjM2ODMsImV4cCI6MjA5NDY5OTY4M30.pEhA8G87hjTfWT4kak2KFgUalM6vsQ36ftALzmGJ9vY';
+
+const FRASES = [
+  'Hoy es un buen día para crear algo increíble.',
+  'El trabajo en equipo hace el sueño funcionar.',
+  'Grandes marcas se construyen con grandes equipos.',
+  'Cada proyecto es una oportunidad de superar expectativas.',
+  'La creatividad es la inteligencia divirtiéndose.',
+  'Vamos a hacer que hoy valga.'
+];
+
+const ROLES = { owner: 'Dueño', designer: 'Diseñador', collaborator: 'Colaborador' };
+
+let currentUser = null;
+let currentRole = null;
+let currentSection = 'inicio';
+
+function ss(d) { try { localStorage.setItem('nm_eq', JSON.stringify(d)); } catch{} }
+function gs() { try { return JSON.parse(localStorage.getItem('nm_eq')||'{}'); } catch{ return {}; } }
+
+async function api(path, opts={}) {
+  const s = gs();
+  const r = await fetch(SB + path, {
+    ...opts,
+    headers: {
+      'apikey': KEY,
+      'Authorization': 'Bearer ' + (s.access_token || KEY),
+      'Content-Type': 'application/json',
+      ...(opts.headers||{})
+    }
+  });
+  try { return await r.json(); } catch { return {}; }
+}
+
+function notify(msg, type='success') {
+  const el = document.createElement('div');
+  el.className = 'notif-item ' + type;
+  el.textContent = msg;
+  document.getElementById('notif').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+async function doLogin() {
+  const email = document.getElementById('lemail').value.trim();
+  const pass = document.getElementById('lpass').value;
+  const err = document.getElementById('lerr');
+  const btn = document.getElementById('btnlogin');
+  err.style.display = 'none';
+  btn.textContent = 'Entrando...'; btn.disabled = true;
+
+  const r = await fetch(SB + '/auth/v1/token?grant_type=password', {
+    method:'POST',
+    headers:{'apikey':KEY,'Content-Type':'application/json'},
+    body:JSON.stringify({email,password:pass})
+  });
+  const d = await r.json();
+
+  if (d.access_token) {
+    const rol = d.user?.app_metadata?.rol || '';
+    if (rol === 'cliente') {
+      err.style.display = 'block';
+      err.textContent = 'Este acceso es solo para el equipo Nomand.';
+      btn.textContent = 'Entrar al equipo'; btn.disabled = false;
+      return;
+    }
+    ss({...d, remember: document.getElementById('rem').checked});
+    initApp(d.user);
+  } else {
+    err.style.display = 'block';
+    btn.textContent = 'Entrar al equipo'; btn.disabled = false;
+  }
+}
+
+function doLogout() {
+  localStorage.removeItem('nm_eq');
+  window.location.href = 'https://nomand-studio-9e2abe.webflow.io';
+}
+
+async function initApp(user) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
+
+  // Get team member info
+  const members = await api('/rest/v1/equipo?user_id=eq.' + user.id + '&select=*');
+  const member = members[0];
+  currentUser = member || { nombre: user.email.split('@')[0], rol: 'owner' };
+  currentRole = currentUser.rol || 'owner';
+
+  const name = currentUser.nombre || user.email.split('@')[0];
+  document.getElementById('uname').textContent = name.split(' ')[0];
+  document.getElementById('uav').textContent = name[0].toUpperCase();
+  document.getElementById('urole').textContent = ROLES[currentRole] || currentRole;
+
+  // Show admin sections based on role
+  if (currentRole === 'owner' || currentRole === 'designer') {
+    document.getElementById('sb-admin-section').style.display = 'block';
+    document.getElementById('sb-nuevo-cliente').style.display = 'flex';
+  }
+  if (currentRole === 'owner') {
+    document.getElementById('sb-equipo').style.display = 'flex';
+  document.getElementById('sb-cotiza').style.display = 'flex';
+  }
+
+  goTo('inicio');
+}
+
+function goTo(section, data=null) {
+  currentSection = section;
+  document.querySelectorAll('.sb-btn').forEach(b => b.classList.remove('active'));
+  const map = {'inicio':0,'clientes':1,'nuevo-cliente':2,'equipo':3};
+  const btns = document.querySelectorAll('.sb-btn');
+  if(map[section] !== undefined) btns[map[section]]?.classList.add('active');
+
+  const main = document.getElementById('main-content');
+  main.innerHTML = '<div class="spin-wrap"><div class="spinner"></div> Cargando...</div>';
+
+  if (section === 'inicio') renderInicio();
+  else if (section === 'clientes') renderClientes();
+  else if (section === 'nuevo-cliente') renderNuevoCliente();
+  else if (section === 'equipo') renderEquipo();
+  else if (section === 'cliente-detalle') renderClienteDetalle(data);
+  else if (section === 'cotizacion') renderCotizacion();
+}
+
+// ── INICIO ──
+async function renderInicio() {
+  const s = gs();
+  const h = new Date().getHours();
+  const sal = h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches';
+  const frase = FRASES[Math.floor(Math.random()*FRASES.length)];
+  const fecha = new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const name = currentUser?.nombre?.split(' ')[0] || 'equipo';
+
+  const [clientes, proyectos] = await Promise.all([
+    api('/rest/v1/clientes?select=id,estado'),
+    api('/rest/v1/proyectos?select=id,estado,total_a_cobrar,pagado')
+  ]);
+
+  const activos = clientes.filter(c=>c.estado==='Activo').length;
+  const totalCobrar = proyectos.reduce((a,p)=>a+(p.total_a_cobrar||0),0);
+  const totalPagado = proyectos.reduce((a,p)=>a+(p.pagado||0),0);
+
+  const showFinanzas = currentRole === 'owner';
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="welcome">
+      <div>
+        <div class="w-date">${fecha}</div>
+        <div class="w-title">${sal}, ${name} 👋</div>
+        <div class="w-sub">${frase}</div>
+      </div>
+      <div class="w-badge">🏔 Nomand Studio</div>
+    </div>
+
+    <div class="${showFinanzas ? 'grid-4' : 'grid-2'}">
+      <div class="card">
+        <div class="card-tag">Clientes</div>
+        <div class="stat-num">${clientes.length}</div>
+        <div class="stat-label">${activos} activos</div>
+      </div>
+      <div class="card">
+        <div class="card-tag">Proyectos</div>
+        <div class="stat-num">${proyectos.length}</div>
+        <div class="stat-label">en curso</div>
+      </div>
+      ${showFinanzas ? `
+      <div class="card">
+        <div class="card-tag">Por cobrar</div>
+        <div class="stat-num" style="font-size:22px">$${totalCobrar.toLocaleString()}</div>
+        <div class="stat-label">total facturado</div>
+      </div>
+      <div class="card">
+        <div class="card-tag">Cobrado</div>
+        <div class="stat-num" style="font-size:22px;color:var(--green)">$${totalPagado.toLocaleString()}</div>
+        <div class="stat-label">${totalCobrar>0?Math.round((totalPagado/totalCobrar)*100):0}% recibido</div>
+      </div>` : ''}
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-head">
+        <span class="table-title">Clientes recientes</span>
+        ${currentRole==='owner'||currentRole==='designer'?'<button class="btn-save" onclick="goTo(\'nuevo-cliente\')" style="padding:7px 16px;font-size:12px">+ Nuevo cliente</button>':''}
+      </div>
+      <div id="clientes-preview"></div>
+    </div>
+  `;
+
+  loadClientesPreview();
+}
+
+async function loadClientesPreview() {
+  const clientes = await api('/rest/v1/clientes?select=*&order=created_at.desc&limit=5');
+  const el = document.getElementById('clientes-preview');
+  if (!el) return;
+  if (!clientes.length) { el.innerHTML = '<div class="empty"><div class="empty-ico">◈</div><div class="empty-txt">Sin clientes aún.</div></div>'; return; }
+
+  el.innerHTML = `<table>
+    <tr><th>Cliente</th><th>Empresa</th><th>Estado</th><th></th></tr>
+    ${clientes.map(c=>`<tr>
+      <td>${c.nombre||'-'}</td>
+      <td>${c.empresa||'-'}</td>
+      <td><span class="badge ${c.estado==='Activo'?'b-green':'b-gray'}">${c.estado||'Activo'}</span></td>
+      <td style="display:flex;gap:6px;align-items:center;">
+        <button class="td-btn" onclick="goTo('cliente-detalle', ${JSON.stringify(c).replace(/"/g,'&quot;')})">Ver →</button>
+        <div style="position:relative;display:inline-block;">
+        <button class="td-btn" onclick="toggleMenu('menu-${c.id}', this)" style="padding:5px 10px;">⋯</button>
+          <div id="menu-${c.id}" class="dropdown-menu">
+            <button class="dropdown-item" onclick="editarCliente(${JSON.stringify(c).replace(/"/g,'&quot;')})">✏️ Editar cliente</button>
+            <button class="dropdown-item danger" onclick="eliminarCliente('${c.id}','${c.nombre}')">🗑 Eliminar cliente</button>
+          </div>
+        </div>
+      </td>
+    </tr>`).join('')}
+  </table>`;
+}
+
+// ── CLIENTES ──
+async function renderClientes() {
+  const clientes = await api('/rest/v1/clientes?select=*&order=created_at.desc');
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="ph">
+      <div class="ph-row">
+        <div><div class="ph-label">Directorio</div><div class="ph-title">Clientes</div></div>
+        ${currentRole==='owner'||currentRole==='designer'?'<button class="btn-save" onclick="goTo(\'nuevo-cliente\')">+ Nuevo cliente</button>':''}
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <tr><th>Nombre</th><th>Empresa</th><th>Correo</th><th>Estado</th><th></th></tr>
+        ${clientes.length ? clientes.map(c=>`<tr>
+          <td>${c.nombre||'-'}</td>
+          <td>${c.empresa||'-'}</td>
+          <td style="color:var(--text2)">${c.correo||'-'}</td>
+          <td><span class="badge ${c.estado==='Activo'?'b-green':'b-gray'}">${c.estado||'Activo'}</span></td>
+          <td style="display:flex;gap:6px;align-items:center;">
+            <button class="td-btn" onclick="goTo('cliente-detalle', ${JSON.stringify(c).replace(/"/g,'&quot;')})">Ver →</button>
+            <div style="position:relative;display:inline-block;">
+              <button class="td-btn" onclick="toggleMenu('menu2-${c.id}', this)" style="padding:5px 10px;">⋯</button>
+              <div id="menu2-${c.id}" class="dropdown-menu">
+                <button class="dropdown-item" onclick="editarCliente(${JSON.stringify(c).replace(/"/g,'&quot;')})">✏️ Editar cliente</button>
+                <button class="dropdown-item danger" onclick="eliminarCliente('${c.id}','${c.nombre}')">🗑 Eliminar cliente</button>
+              </div>
+            </div>
+          </td>
+        </tr>`).join('') : '<tr><td colspan="5"><div class="empty"><div class="empty-ico">◈</div><div class="empty-txt">Sin clientes aún.</div></div></td></tr>'}
+      </table>
+    </div>
+  `;
+}
+
+// ── NUEVO CLIENTE ──
+function renderNuevoCliente() {
+  document.getElementById('main-content').innerHTML = `
+    <div class="ph"><div class="ph-label">Agregar</div><div class="ph-title">Nuevo cliente</div></div>
+    <div class="form-card">
+      <div class="form-grid">
+        <div class="fg"><label>Nombre completo *</label><input type="text" id="nc-nombre" placeholder="Ej. Carlos Peña"></div>
+        <div class="fg"><label>Empresa o marca *</label><input type="text" id="nc-empresa" placeholder="Ej. Cuero Sagrado"></div>
+        <div class="fg"><label>Correo electrónico *</label><input type="email" id="nc-correo" placeholder="cliente@correo.com"></div>
+        <div class="fg"><label>Teléfono</label><input type="text" id="nc-tel" placeholder="+52 55 0000 0000"></div>
+        <div class="fg form-full"><label>Servicios que desea</label>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px" id="servicios-check">
+            ${['Marketing digital','Manejo de redes','Identidad de marca','Branding','Diseño gráfico','Fotografía','Video','Sitio web','Estrategia'].map(s=>`
+              <label style="display:flex;align-items:center;gap:7px;padding:8px 12px;background:rgba(255,255,255,0.5);border:1px solid rgba(0,0,0,0.08);border-radius:8px;cursor:pointer;font-size:12px;color:var(--text2);">
+                <input type="checkbox" value="${s}" style="accent-color:var(--orange)"> ${s}
+              </label>`).join('')}
+          </div>
+        </div>
+        <div class="fg"><label>Nombre del proyecto</label><input type="text" id="nc-proyecto" placeholder="Ej. Identidad visual 2026"></div>
+        <div class="fg"><label>Paquete</label>
+          <select id="nc-paquete" onchange="autoCheckServicios(this.value)">
+            <option value="">Seleccionar...</option>
+            <option>Nómada Esencial</option>
+            <option>Nómada Pro</option>
+            <option>Cumbre Visual</option>
+            <option>Expedición Total</option>
+            <option>Personalizado</option>
+          </select>
+        </div>
+        ${currentRole==='owner'?`
+        <div class="fg"><label>Total a cobrar ($)</label><input type="number" id="nc-total" placeholder="0"></div>
+        <div class="fg"><label>Ya pagó ($)</label><input type="number" id="nc-pagado" placeholder="0"></div>`:''}
+        <div class="fg"><label>Fecha de entrega</label><input type="date" id="nc-fecha"></div>
+        <div class="fg"><label>Descripción del proyecto</label><textarea id="nc-desc" placeholder="Describe brevemente el proyecto..."></textarea></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-cancel" onclick="goTo('clientes')">Cancelar</button>
+        <button class="btn-save" id="btn-crear-cliente" onclick="crearCliente()">Crear cliente y enviar acceso</button>
+      </div>
+      <p id="nc-status" style="font-size:12px;color:var(--text3);text-align:right;margin-top:8px"></p>
+    </div>
+  `;
+}
+
+async function crearCliente() {
+  const nombre = document.getElementById('nc-nombre').value.trim();
+  const empresa = document.getElementById('nc-empresa').value.trim();
+  const correo = document.getElementById('nc-correo').value.trim();
+  const tel = document.getElementById('nc-tel')?.value.trim();
+  const proyecto = document.getElementById('nc-proyecto')?.value.trim();
+  const paquete = document.getElementById('nc-paquete')?.value;
+  const total = parseFloat(document.getElementById('nc-total')?.value||0);
+  const pagado = parseFloat(document.getElementById('nc-pagado')?.value||0);
+  const fecha = document.getElementById('nc-fecha')?.value;
+  const desc = document.getElementById('nc-desc')?.value.trim();
+
+  const servicios = Array.from(document.querySelectorAll('#servicios-check input:checked')).map(i=>i.value);
+
+  if (!nombre||!empresa||!correo) { notify('Nombre, empresa y correo son obligatorios.','error'); return; }
+
+  const btn = document.getElementById('btn-crear-cliente');
+  const status = document.getElementById('nc-status');
+  btn.disabled = true; btn.textContent = 'Creando...';
+  status.textContent = 'Creando usuario en Supabase...';
+
+  try {
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx3V1t3njMEoQ9gmYWUMYh3UeMqVRHZx4xe8l90arAL7uuH_cmiRinFmfX2Q_rii7hT/exec';
+
+    status.textContent = 'Creando acceso del cliente...';
+
+    // Crear usuario en Supabase con rol:cliente
+    const SVC = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvd2R1dHp5cnNmbmNud2VqcGJ0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTEyMzY4MywiZXhwIjoyMDk0Njk5NjgzfQ.RQqdd0AqeJBVt3gRDMiZN-20ND1MvJSYbt83nUiH7IQ';
+    const invRes = await fetch(SB + '/auth/v1/admin/invite', {
+      method: 'POST',
+      headers: { 'apikey': SVC, 'Authorization': 'Bearer ' + SVC, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: correo, data: { nombre }, app_metadata: { rol: 'cliente' } })
+    });
+    const invData = await invRes.json();
+
+    status.textContent = 'Creando carpetas en Drive y enviando correo...';
+
+    // Apps Script: carpetas + correo bienvenida desde colaborador.nomand@gmail.com
+    await callAppsScript(SCRIPT_URL, {
+      action: 'createClientComplete',
+      clientName: empresa,
+      folders: servicios,
+      email: correo,
+      nombre: nombre,
+      sendWelcome: true
+    });
+
+    status.textContent = 'Guardando en base de datos...';
+
+    // Create cliente record in Supabase (without user_id for now, will link when they accept invite)
+    const clienteRes = await api('/rest/v1/clientes', {
+      method: 'POST',
+      headers: { 'Prefer': 'return=representation' },
+      body: JSON.stringify({ nombre, empresa, correo, telefono: tel, estado: 'Activo', carpeta_creada: false })
+    });
+    const cliente = Array.isArray(clienteRes) ? clienteRes[0] : clienteRes;
+
+    // Create project if data provided
+    if (proyecto && cliente?.id) {
+      await api('/rest/v1/proyectos', {
+        method: 'POST',
+        body: JSON.stringify({
+          cliente_id: cliente.id,
+          nombre: proyecto,
+          paquete,
+          estado: 'En proceso',
+          total_a_cobrar: total||0,
+          pagado: pagado||0,
+          fecha_entrega: fecha||null,
+          descripcion: desc||null
+        })
+      });
+    }
+
+    status.textContent = '✅ Cliente creado. Carpetas en Drive listas y correo de acceso enviado.';
+    notify('✅ Cliente ' + nombre + ' creado exitosamente.');
+    setTimeout(() => goTo('clientes'), 2000);
+
+  } catch(e) {
+    notify('Error al crear cliente. Intenta de nuevo.');
+    btn.disabled = false; btn.textContent = 'Crear cliente y enviar acceso';
+    status.textContent = 'Error: ' + e.message;
+  }
+}
+
+async function crearCarpetasDrive(empresa, servicios) {
+  // Carpetas base siempre
+  const carpetasBase = ['Brief', 'Contrato', 'Cronograma', 'Entregables', 'Solicitados'];
+  // Carpetas adicionales según servicios
+  const carpetasExtra = [];
+  if (servicios.includes('Fotografía')) carpetasExtra.push('Fotografía');
+  if (servicios.includes('Video')) carpetasExtra.push('Video');
+  if (servicios.includes('Identidad de marca')||servicios.includes('Branding')) carpetasExtra.push('Identidad');
+
+  const todasCarpetas = [...new Set([...carpetasBase, ...carpetasExtra])];
+
+  // Call Google Apps Script to create folders
+  try {
+    await fetch('https://script.google.com/macros/s/AKfycbx3V1t3njMEoQ9gmYWUMYh3UeMqVRHZx4xe8l90arAL7uuH_cmiRinFmfX2Q_rii7hT/exec', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'createClientFolders', clientName: empresa, folders: todasCarpetas }),
+      mode: 'no-cors'
+    });
+  } catch(e) {
+    console.log('Drive folders: manual creation needed');
+  }
+}
+
+// ── CLIENTE DETALLE ──
+async function renderClienteDetalle(cliente) {
+  currentClienteId = cliente.id;
+  currentClienteData = cliente;
+  const [proyectos, archivos] = await Promise.all([
+    api('/rest/v1/proyectos?cliente_id=eq.' + cliente.id),
+    api('/rest/v1/archivos?cliente_id=eq.' + cliente.id + '&order=fecha.desc')
+  ]);
+
+  const p = proyectos[0];
+  const showFinanzas = currentRole === 'owner';
+
+  document.getElementById('main-content').innerHTML = `
+    <button class="back-btn" onclick="goTo('clientes')">← Regresar</button>
+    <div class="client-header">
+      <div class="client-av">${(cliente.nombre||'?')[0].toUpperCase()}</div>
+      <div>
+        <div class="client-name">${cliente.nombre}</div>
+        <div class="client-empresa">${cliente.empresa} · ${cliente.correo}</div>
+      </div>
+      <span class="badge ${cliente.estado==='Activo'?'b-green':'b-gray'}" style="margin-left:auto">${cliente.estado||'Activo'}</span>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid-${showFinanzas?'3':'2'}" style="margin-bottom:20px">
+      ${p && showFinanzas ? `
+      <div class="card">
+        <div class="card-tag">Paquete</div>
+        <div class="card-title">${p.paquete||'—'}</div>
+        <span class="badge ${p.estado==='Completado'?'b-green':'b-orange'}">${p.estado||'En proceso'}</span>
+      </div>
+      <div class="card">
+        <div class="card-tag">Total</div>
+        <div class="stat-num" style="font-size:22px">$${(p.total_a_cobrar||0).toLocaleString()}</div>
+        <div class="prog">
+          <div class="prog-row"><span>${p.porcentaje_pagado||0}%</span><span>$${(p.pagado||0).toLocaleString()} pagado</span></div>
+          <div class="prog-track"><div class="prog-fill" style="width:${p.porcentaje_pagado||0}%"></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-tag">Archivos</div>
+        <div class="stat-num">${archivos.length}</div>
+        <div class="stat-label">subidos</div>
+      </div>` : `
+      <div class="card">
+        <div class="card-tag">Proyecto</div>
+        <div class="card-title">${p?.nombre||'—'}</div>
+        <span class="badge b-orange">${p?.estado||'En proceso'}</span>
+      </div>
+      <div class="card">
+        <div class="card-tag">Archivos</div>
+        <div class="stat-num">${archivos.length}</div>
+        <div class="stat-label">disponibles</div>
+      </div>`}
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('internos', this)">📁 Internos</button>
+      <button class="tab" onclick="switchTab('publicados', this)">✅ A la vista</button>
+      ${showFinanzas ? '<button class="tab" onclick="switchTab(\'pagos\', this)">$ Pagos</button>' : ''}
+      <button class="tab" onclick="switchTab('subir', this)">↑ Subir</button>
+    </div>
+
+    <div id="tab-content">
+      ${renderArchivosTab(archivos.filter(a=>!a.publicado), false)}
+    </div>
+
+    <!-- Edit payment modal -->
+    ${showFinanzas && p ? `
+    <div id="modal-pago" class="modal">
+      <div class="modal-ov" onclick="document.getElementById('modal-pago').classList.remove('active')"></div>
+      <div class="modal-box">
+        <button class="modal-close" onclick="document.getElementById('modal-pago').classList.remove('active')">✕</button>
+        <div class="modal-title">Actualizar pago</div>
+        <div class="form-grid">
+          <div class="fg"><label>Total a cobrar ($)</label><input type="number" id="mp-total" value="${p.total_a_cobrar||0}"></div>
+          <div class="fg"><label>Ya pagó ($)</label><input type="number" id="mp-pagado" value="${p.pagado||0}"></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-cancel" onclick="document.getElementById('modal-pago').classList.remove('active')">Cancelar</button>
+          <button class="btn-save" onclick="actualizarPago('${p.id}')">Guardar</button>
+        </div>
+      </div>
+    </div>` : ''}
+  `;
+}
+
+function renderArchivosTab(archivos, publicados) {
+  if (!archivos.length) return '<div class="empty"><div class="empty-ico">📁</div><div class="empty-txt">' + (publicados ? 'Sin archivos publicados.' : 'Sin archivos internos.') + '</div></div>';
+
+  const tipos = ['Brief','Contrato','Cronograma','Entregables','Solicitados'];
+  const grouped = {};
+  archivos.forEach(a => {
+    const t = a.tipo||'Entregables';
+    if(!grouped[t]) grouped[t]=[];
+    grouped[t].push(a);
+  });
+
+  const icos = {Brief:'📄',Contrato:'📋',Cronograma:'📅',Entregables:'🏔',Solicitados:'📎'};
+
+  return tipos.filter(t=>grouped[t]).map(tipo=>`
+    <div style="margin-bottom:20px">
+      <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);font-weight:700;margin-bottom:8px">${icos[tipo]||'📁'} ${tipo}</div>
+      ${grouped[tipo].map(f=>`
+        <div class="file-row">
+          <div class="f-ico">${fIco(f.nombre)}</div>
+          <span class="f-name">${f.nombre}</span>
+          <span class="f-date">${f.fecha?new Date(f.fecha).toLocaleDateString('es-MX',{day:'numeric',month:'short'}):''}</span>
+          <div class="f-actions">
+            <a href="${f.link_drive}" target="_blank" class="f-pub" style="text-decoration:none">Ver</a>
+            ${!publicados ? `<button class="f-pub" onclick="publicarArchivo('${f.id}')">Publicar →</button>` : ''}
+          </div>
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const content = document.getElementById('tab-content');
+
+  if (tab === 'internos') {
+    api('/rest/v1/archivos?cliente_id=eq.' + currentClienteId + '&publicado=eq.false&order=fecha.desc')
+      .then(archs => { content.innerHTML = renderArchivosTab(archs, false); });
+  } else if (tab === 'publicados') {
+    api('/rest/v1/archivos?cliente_id=eq.' + currentClienteId + '&publicado=eq.true&order=fecha.desc')
+      .then(archs => { content.innerHTML = renderArchivosTab(archs, true); });
+  } else if (tab === 'pagos') {
+    content.innerHTML = `<button class="btn-save" onclick="document.getElementById('modal-pago').classList.add('active')">Actualizar pago</button>`;
+  } else if (tab === 'subir') {
+    content.innerHTML = `
+      <div class="grid-2">
+        <!-- Subir archivos -->
+        <div class="form-card">
+          <div class="form-title">📁 Subir archivos</div>
+          <div class="fg" style="margin-bottom:12px">
+            <label>Tipo</label>
+            <select id="up-tipo">
+              <option>Entregables</option><option>Brief</option><option>Contrato</option><option>Cronograma</option><option>Solicitados</option>
+            </select>
+          </div>
+          <div class="fg" style="margin-bottom:12px">
+            <label>Carpeta (ej. Mayo 2026 / Semana 1)</label>
+            <input type="text" id="up-carpeta" placeholder="Opcional — para organizar por fecha">
+          </div>
+          <div id="drop-zone" style="border:1.5px dashed rgba(0,0,0,0.12);border-radius:12px;padding:32px;text-align:center;cursor:pointer;margin-bottom:12px;transition:all 0.2s;" 
+            onclick="document.getElementById('up-file').click()"
+            ondragover="onDragOver(event)"
+            ondragleave="onDragLeave(event)"
+            ondrop="onDrop(event)">
+            <input type="file" id="up-file" multiple style="display:none" onchange="onUpFiles(this)">
+            <div style="font-size:28px;margin-bottom:8px">📂</div>
+            <p style="font-size:13px;color:var(--text2)">Arrastra archivos aquí o <span style="color:var(--orange);font-weight:700">selecciona</span></p>
+            <p style="font-size:11px;color:var(--text3);margin-top:4px">PDF, imágenes, videos, audios — cualquier formato</p>
+          </div>
+          <div id="up-list" style="margin-bottom:12px"></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-save" onclick="subirArchivos(false)">Subir como interno</button>
+            <button class="btn-save" style="background:var(--green)" onclick="subirArchivos(true)">Subir y publicar</button>
+          </div>
+          <p id="up-status" style="font-size:12px;color:var(--text3);margin-top:8px"></p>
+        </div>
+
+        <!-- Crear carpeta -->
+        <div class="form-card">
+          <div class="form-title">📁 Crear carpeta en Drive</div>
+          <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">Crea subcarpetas dentro de la carpeta del cliente en Drive para organizar por mes o semana.</p>
+          <div class="fg" style="margin-bottom:12px">
+            <label>Tipo padre</label>
+            <select id="cf-tipo">
+              <option>Entregables</option><option>Brief</option><option>Contrato</option><option>Cronograma</option>
+            </select>
+          </div>
+          <div class="fg" style="margin-bottom:12px">
+            <label>Nombre de la carpeta</label>
+            <input type="text" id="cf-nombre" placeholder="Ej. Mayo 2026">
+          </div>
+          <div class="fg" style="margin-bottom:16px">
+            <label>Subcarpeta (opcional)</label>
+            <input type="text" id="cf-sub" placeholder="Ej. Semana 1">
+          </div>
+          <button class="btn-save" onclick="crearCarpetaEnDrive()">Crear carpeta</button>
+          <p id="cf-status" style="font-size:12px;color:var(--text3);margin-top:8px"></p>
+        </div>
+      </div>`;
+  }
+}
+
+let currentClienteId = null;
+let currentClienteData = null;
+let upFiles = [];
+
+function onDragOver(e) {
+  e.preventDefault();
+  const zone = document.getElementById('drop-zone');
+  if (zone) { zone.style.borderColor = 'var(--orange)'; zone.style.background = 'var(--orange-10)'; }
+}
+
+function onDragLeave(e) {
+  const zone = document.getElementById('drop-zone');
+  if (zone) { zone.style.borderColor = 'rgba(0,0,0,0.12)'; zone.style.background = ''; }
+}
+
+function onDrop(e) {
+  e.preventDefault();
+  onDragLeave(e);
+  upFiles = Array.from(e.dataTransfer.files);
+  showUpFiles();
+}
+
+function onUpFiles(inp) {
+  upFiles = Array.from(inp.files);
+  showUpFiles();
+}
+
+function showUpFiles() {
+  const el = document.getElementById('up-list');
+  if (!el) return;
+  el.innerHTML = upFiles.map(f=>
+    `<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);padding:7px 10px;background:rgba(0,0,0,0.03);border-radius:8px;margin-bottom:4px">
+      ${fIco(f.name)} <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</span>
+      <span style="color:var(--text3);flex-shrink:0">${(f.size/1024).toFixed(0)}KB</span>
+    </div>`
+  ).join('');
+}
+
+async function subirArchivos(publicar) {
+  if (!upFiles.length) { notify('Selecciona archivos primero.'); return; }
+  const tipo = document.getElementById('up-tipo')?.value || 'Entregables';
+  const carpeta = document.getElementById('up-carpeta')?.value || '';
+  const status = document.getElementById('up-status');
+  status.textContent = 'Registrando archivos...';
+
+  const today = new Date().toISOString().split('T')[0];
+
+  for (const file of upFiles) {
+    await api('/rest/v1/archivos', {
+      method: 'POST',
+      headers: { 'Prefer': 'return=minimal' },
+      body: JSON.stringify({
+        cliente_id: currentClienteId,
+        nombre: file.name,
+        tipo,
+        carpeta,
+        fecha: today,
+        publicado: publicar,
+        link_drive: ''
+      })
+    });
+  }
+
+  status.textContent = publicar
+    ? '✅ Archivos publicados. El cliente ya puede verlos.'
+    : '✅ Archivos guardados como internos. Recuerda subirlos a Drive.';
+
+  notify(publicar ? '✅ Archivos publicados al cliente.' : '✅ Archivos guardados como internos.');
+  upFiles = [];
+  const upList = document.getElementById('up-list');
+  if (upList) upList.innerHTML = '';
+  const upFile = document.getElementById('up-file');
+  if (upFile) upFile.value = '';
+
+  // Refresh current tab
+  setTimeout(() => {
+    const activeTab = document.querySelector('.tab.active');
+    if (activeTab) switchTab(publicar ? 'publicados' : 'internos', activeTab);
+  }, 500);
+}
+
+async function crearCarpetaEnDrive() {
+  if (!currentClienteData) return;
+  const tipo = document.getElementById('cf-tipo')?.value;
+  const nombre = document.getElementById('cf-nombre')?.value.trim();
+  const sub = document.getElementById('cf-sub')?.value.trim();
+  const status = document.getElementById('cf-status');
+
+  if (!nombre) { notify('Escribe el nombre de la carpeta.'); return; }
+  status.textContent = 'Creando en Drive...';
+
+  const ruta = sub ? nombre + ' / ' + sub : nombre;
+
+  // Send to Apps Script
+  await fetch('https://script.google.com/macros/s/AKfycbx3V1t3njMEoQ9gmYWUMYh3UeMqVRHZx4xe8l90arAL7uuH_cmiRinFmfX2Q_rii7hT/exec', {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'createSubfolder',
+      clientName: currentClienteData.empresa,
+      tipo,
+      folderName: nombre,
+      subfolder: sub || ''
+    }),
+    mode: 'no-cors'
+  });
+
+  status.textContent = '✅ Carpeta "' + ruta + '" creada en Drive (puede tardar unos segundos).';
+  notify('✅ Carpeta ' + ruta + ' creada.');
+  document.getElementById('cf-nombre').value = '';
+  document.getElementById('cf-sub').value = '';
+}
+
+async function publicarArchivo(archivoId) {
+  await api('/rest/v1/archivos?id=eq.' + archivoId, {
+    method: 'PATCH',
+    body: JSON.stringify({ publicado: true })
+  });
+  notify('✅ Archivo publicado al cliente.');
+  // Refresh
+  const activeTab = document.querySelector('.tab.active');
+  if (activeTab) switchTab('internos', document.querySelector('.tab'));
+}
+
+async function actualizarPago(proyId) {
+  const total = parseFloat(document.getElementById('mp-total').value||0);
+  const pagado = parseFloat(document.getElementById('mp-pagado').value||0);
+  await api('/rest/v1/proyectos?id=eq.' + proyId, {
+    method: 'PATCH',
+    body: JSON.stringify({ total_a_cobrar: total, pagado })
+  });
+  document.getElementById('modal-pago').classList.remove('active');
+  notify('✅ Pago actualizado.');
+}
+
+// ── EQUIPO ──
+async function renderEquipo() {
+  if (currentRole !== 'owner') { document.getElementById('main-content').innerHTML = '<div class="empty"><div class="empty-ico">🔒</div><div class="empty-txt">Solo los dueños pueden gestionar el equipo.</div></div>'; return; }
+
+  const miembros = await api('/rest/v1/equipo?select=*&order=created_at.desc');
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="ph">
+      <div class="ph-row">
+        <div><div class="ph-label">Gestión</div><div class="ph-title">Equipo</div></div>
+        <button class="btn-save" onclick="showNuevoMiembro()">+ Agregar colaborador</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <tr><th>Nombre</th><th>Correo</th><th>Rol</th><th></th></tr>
+        ${miembros.length ? miembros.map(m=>`<tr>
+          <td>${m.nombre||'-'}</td>
+          <td style="color:var(--text2)">${m.correo||'-'}</td>
+          <td><span class="badge ${m.rol==='owner'?'role-owner':m.rol==='designer'?'role-designer':'role-collab'}">${ROLES[m.rol]||m.rol}</span></td>
+          <td><button class="td-btn" onclick="editarRol('${m.id}','${m.rol}')">Editar rol</button></td>
+        </tr>`).join('') : '<tr><td colspan="4"><div class="empty"><div class="empty-ico">👥</div><div class="empty-txt">Sin colaboradores aún.</div></div></td></tr>'}
+      </table>
+    </div>
+
+    <!-- Modal nuevo miembro -->
+    <div id="modal-miembro" class="modal">
+      <div class="modal-ov" onclick="document.getElementById('modal-miembro').classList.remove('active')"></div>
+      <div class="modal-box">
+        <button class="modal-close" onclick="document.getElementById('modal-miembro').classList.remove('active')">✕</button>
+        <div class="modal-title">Nuevo colaborador</div>
+        <div class="form-grid">
+          <div class="fg"><label>Nombre</label><input type="text" id="nm-nombre" placeholder="Nombre completo"></div>
+          <div class="fg"><label>Correo</label><input type="email" id="nm-correo" placeholder="correo@nomand.studio"></div>
+          <div class="fg form-full"><label>Rol</label>
+            <select id="nm-rol">
+              <option value="designer">Diseñador — puede subir archivos, sin ver precios</option>
+              <option value="collaborator">Colaborador — solo ve su cliente asignado</option>
+              <option value="owner">Dueño — acceso total</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-cancel" onclick="document.getElementById('modal-miembro').classList.remove('active')">Cancelar</button>
+          <button class="btn-save" onclick="crearMiembro()">Crear y enviar acceso</button>
+        </div>
+        <p id="nm-status" style="font-size:12px;color:var(--text3);margin-top:8px;text-align:right"></p>
+      </div>
+    </div>
+  `;
+}
+
+function showNuevoMiembro() {
+  document.getElementById('modal-miembro').classList.add('active');
+}
+
+async function crearMiembro() {
+  const nombre = document.getElementById('nm-nombre').value.trim();
+  const correo = document.getElementById('nm-correo').value.trim();
+  const rol = document.getElementById('nm-rol').value;
+  if (!nombre||!correo) { notify('Nombre y correo obligatorios.'); return; }
+
+  document.getElementById('nm-status').textContent = 'Creando...';
+
+  const s = gs();
+  await fetch(SB + '/auth/v1/admin/invite', {
+    method: 'POST',
+    headers: { 'apikey': KEY, 'Authorization': 'Bearer ' + s.access_token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: correo })
+  });
+
+  await api('/rest/v1/equipo', {
+    method: 'POST',
+    body: JSON.stringify({ nombre, correo, rol })
+  });
+
+  document.getElementById('modal-miembro').classList.remove('active');
+  notify('✅ ' + nombre + ' agregado. Se le envió un correo de acceso.');
+  renderEquipo();
+}
+
+async function editarRol(id, rolActual) {
+  const nuevoRol = prompt('Nuevo rol (owner / designer / collaborator):', rolActual);
+  if (!nuevoRol || !['owner','designer','collaborator'].includes(nuevoRol)) return;
+  await api('/rest/v1/equipo?id=eq.' + id, { method:'PATCH', body:JSON.stringify({rol:nuevoRol}) });
+  notify('✅ Rol actualizado.');
+  renderEquipo();
+}
+
+// ── COTIZACIÓN ──
+const SERVICIOS_CATALOG = [
+  { id:'identidad', nombre:'Identidad de Marca', desc:'Logo, paleta de colores, tipografía y manual de marca básico', precio_unit:8500, categoria:'Branding' },
+  { id:'branding', nombre:'Branding Completo', desc:'Identidad + manual de marca completo + aplicaciones básicas', precio_unit:14500, categoria:'Branding' },
+  { id:'disenio_grafico', nombre:'Diseño Gráfico', desc:'Piezas gráficas digitales e impresas (por pieza)', precio_unit:1200, categoria:'Diseño' },
+  { id:'redes_setup', nombre:'Setup Redes Sociales', desc:'Configuración y diseño de perfiles en 2 redes sociales', precio_unit:3500, categoria:'Redes' },
+  { id:'redes_mensual', nombre:'Manejo de Redes Sociales', desc:'Gestión mensual de 2 redes, 12 publicaciones/mes + stories', precio_unit:6500, categoria:'Redes' },
+  { id:'marketing', nombre:'Marketing Digital', desc:'Estrategia y ejecución de campañas digitales (mensual)', precio_unit:8000, categoria:'Marketing' },
+  { id:'fotografia', nombre:'Fotografía de Marca', desc:'Sesión fotográfica, 30 fotos editadas', precio_unit:5500, categoria:'Fotografía' },
+  { id:'estrategia', nombre:'Estrategia de Comunicación', desc:'Plan estratégico de comunicación y posicionamiento', precio_unit:7000, categoria:'Estrategia' },
+  { id:'sitio_web', nombre:'Sitio Web', desc:'Diseño y desarrollo web profesional (hasta 5 páginas)', precio_unit:22000, categoria:'Digital' },
+  { id:'video', nombre:'Video de Marca', desc:'Video promocional o reels (hasta 60 seg)', precio_unit:9500, categoria:'Producción' }
+];
+
+const PAQUETES = [
+  { id:'esencial', nombre:'Nómada Esencial', tagline:'Tu identidad, tu punto de partida', servicios:['identidad','disenio_grafico'], precio_paquete:11000, ahorro:1700, ideal:'Emprendedores que están comenzando y necesitan una identidad sólida' },
+  { id:'pro', nombre:'Nómada Pro', tagline:'Presencia digital completa', servicios:['identidad','disenio_grafico','redes_setup','redes_mensual'], precio_paquete:22000, ahorro:3700, ideal:'Negocios que quieren crecer su presencia digital con identidad propia' },
+  { id:'cumbre', nombre:'Cumbre Visual', tagline:'Imagen profesional de alto impacto', servicios:['branding','disenio_grafico','redes_mensual','fotografia'], precio_paquete:32000, ahorro:5500, ideal:'Marcas que necesitan diferenciarse con una imagen premium' },
+  { id:'total', nombre:'Expedición Total', tagline:'Tu marca, tu ecosistema completo', servicios:['branding','disenio_grafico','redes_mensual','marketing','fotografia','estrategia'], precio_paquete:48000, ahorro:9000, ideal:'Empresas que quieren una solución integral de comunicación' }
+];
+
+const IVA = 0.16;
+const TERMINOS = `1. VIGENCIA: Esta cotización tiene validez de 15 días naturales a partir de la fecha de emisión.
+
+2. PAGOS: Se requiere un anticipo del 50% para iniciar el proyecto. El 50% restante se liquida contra entrega final.
+
+3. REVISIONES: Cada servicio incluye hasta 3 rondas de revisión. Revisiones adicionales se cotizan por separado.
+
+4. TIEMPOS: Los tiempos de entrega inician una vez recibido el anticipo y el brief completo del cliente.
+
+5. PROPIEDAD INTELECTUAL: Los derechos de los entregables finales se transfieren al cliente al momento de la liquidación total.
+
+6. CAMBIOS DE ALCANCE: Cualquier modificación al alcance original deberá acordarse por escrito y podrá implicar ajuste en el costo.
+
+7. CANCELACIÓN: En caso de cancelación, el anticipo no es reembolsable. Los trabajos completados deberán liquidarse.
+
+8. CONFIDENCIALIDAD: Nomand Studio se compromete a mantener confidencial toda información proporcionada por el cliente.`;
+
+const PROCESO = [
+  { paso:'01', titulo:'Brief & Descubrimiento', desc:'Conocemos tu marca, tu mercado y tus objetivos.', tiempo:'1-2 días' },
+  { paso:'02', titulo:'Propuesta Creativa', desc:'Desarrollamos la propuesta visual y estratégica.', tiempo:'3-5 días' },
+  { paso:'03', titulo:'Revisión & Ajustes', desc:'Afinamos cada detalle hasta superar tus expectativas.', tiempo:'2-3 días' },
+  { paso:'04', titulo:'Entrega Final', desc:'Entregamos todos los archivos listos para usar.', tiempo:'1-2 días' }
+];
+
+let cotizSeleccion = { tipo:'paquete', paqueteId:null, serviciosIds:[], clienteNombre:'', proyectoNombre:'', notas:'', fecha:'' };
+let cotizEditId = null;
+
+function renderCotizacion() {
+  const main = document.getElementById('main-content');
+  main.innerHTML = `
+    <div class="ph">
+      <div class="ph-label">Documentos</div>
+      <div class="ph-title">Cotizaciones</div>
+    </div>
+    <div class="tabs" id="cotiz-tabs">
+      <button class="tab active" onclick="switchCotizTab('guardadas')">📋 Guardadas</button>
+      <button class="tab" onclick="switchCotizTab('nueva')">✚ Nueva cotización</button>
+    </div>
+    <div id="tab-guardadas"></div>
+    <div id="tab-nueva" style="display:none;"></div>
+  `;
+  loadCotizacionesGuardadas();
+  buildNuevaCotizacion();
+}
+
+function switchCotizTab(tab) {
+  document.querySelectorAll('#cotiz-tabs .tab').forEach((t,i) => t.classList.toggle('active', (tab==='guardadas'&&i===0)||(tab==='nueva'&&i===1)));
+  document.getElementById('tab-guardadas').style.display = tab==='guardadas' ? 'block' : 'none';
+  document.getElementById('tab-nueva').style.display = tab==='nueva' ? 'block' : 'none';
+}
+
+async function loadCotizacionesGuardadas() {
+  const el = document.getElementById('tab-guardadas');
+  el.innerHTML = '<div class="spin-wrap"><div class="spinner"></div> Cargando...</div>';
+  const res = await api('/rest/v1/cotizaciones?order=creado_at.desc&select=*');
+  const data = await res.json();
+  if (!data.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-ico">📋</div><div class="empty-txt">No hay cotizaciones guardadas aún.<br>Crea la primera con el botón de arriba.</div></div>';
+    return;
+  }
+  el.innerHTML = `<div class="table-wrap">
+    <table>
+      <thead><tr><th>Proyecto</th><th>Cliente</th><th>Total</th><th>Creado por</th><th>Fecha</th><th></th></tr></thead>
+      <tbody>${data.map(c => `
+        <tr>
+          <td><strong style="color:var(--text)">${c.proyecto_nombre||'—'}</strong></td>
+          <td>${c.cliente_nombre||'—'}</td>
+          <td style="color:var(--orange);font-weight:700;">$${(c.total||0).toLocaleString()}</td>
+          <td><span style="font-size:11px;color:var(--text2)">${c.creado_por||'—'}</span></td>
+          <td><span style="font-size:11px;color:var(--text3)">${c.creado_at ? new Date(c.creado_at).toLocaleDateString('es-MX') : '—'}</span></td>
+          <td>
+            <div style="display:flex;gap:6px;">
+              <button class="td-btn" onclick="descargarCotizGuardada('${c.id}')">📄 PDF</button>
+              <button class="td-btn" onclick="editarCotizacion('${c.id}')">✏️ Editar</button>
+              <button class="td-btn" style="color:var(--red)" onclick="eliminarCotizacion('${c.id}')">🗑</button>
+            </div>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+function buildNuevaCotizacion() {
+  const el = document.getElementById('tab-nueva');
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 320px;gap:24px;align-items:start;">
+      <div>
+        <div class="form-card" style="margin-bottom:16px;">
+          <div class="form-title">Datos del cliente</div>
+          <div class="form-grid">
+            <div class="fg"><label>Nombre del cliente *</label><input type="text" id="cq-cliente" placeholder="Ej. Carlos Peña" oninput="updateCotizPreview()"></div>
+            <div class="fg"><label>Nombre del proyecto *</label><input type="text" id="cq-proyecto" placeholder="Ej. Identidad Cuero Sagrado" oninput="updateCotizPreview()"></div>
+            <div class="fg"><label>Correo</label><input type="email" id="cq-correo" placeholder="cliente@correo.com"></div>
+            <div class="fg"><label>Entrega estimada</label><input type="date" id="cq-fecha"></div>
+            <div class="fg form-full"><label>Notas adicionales</label><textarea id="cq-notas" placeholder="Requisitos especiales..."></textarea></div>
+          </div>
+        </div>
+        <div class="form-card" style="margin-bottom:16px;">
+          <div class="form-title">Tipo de cotización</div>
+          <div style="display:flex;gap:10px;margin-bottom:20px;">
+            <button onclick="setCotizTipo('paquete')" id="btn-tipo-paquete" class="btn-save" style="flex:1;">📦 Por paquete</button>
+            <button onclick="setCotizTipo('individual')" id="btn-tipo-individual" class="btn-cancel" style="flex:1;">🔧 Servicios individuales</button>
+          </div>
+          <div id="cotiz-paquetes">
+            ${PAQUETES.map(p => `
+              <div class="card clickable" id="pkg-${p.id}" onclick="selectPaquete('${p.id}')" style="margin-bottom:10px;border:1.5px solid transparent;transition:all 0.2s;">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+                  <div>
+                    <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--orange);font-weight:700;margin-bottom:3px;">${p.nombre}</div>
+                    <div style="font-size:14px;color:var(--text);font-style:italic;">${p.tagline}</div>
+                  </div>
+                  <div style="text-align:right;flex-shrink:0;margin-left:12px;">
+                    <div style="font-size:18px;font-weight:700;color:var(--text);">$${p.precio_paquete.toLocaleString()}</div>
+                    <div style="font-size:11px;color:var(--green);">Ahorras $${p.ahorro.toLocaleString()}</div>
+                  </div>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:5px;">
+                  ${p.servicios.map(sid => { const s = SERVICIOS_CATALOG.find(x=>x.id===sid); return s ? `<span class="badge b-orange" style="font-size:10px;">${s.nombre}</span>` : ''; }).join('')}
+                </div>
+              </div>`).join('')}
+          </div>
+          <div id="cotiz-individuales" style="display:none;">
+            ${['Branding','Diseño','Redes','Marketing','Fotografía','Estrategia','Digital','Producción'].map(cat => {
+              const items = SERVICIOS_CATALOG.filter(s=>s.categoria===cat);
+              if (!items.length) return '';
+              return `<div style="margin-bottom:14px;">
+                <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text3);font-weight:700;margin-bottom:7px;">${cat}</div>
+                ${items.map(s => `
+                  <label style="display:flex;align-items:center;gap:10px;padding:9px 13px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:9px;cursor:pointer;margin-bottom:5px;transition:all 0.15s;" onmouseover="this.style.borderColor='rgba(243,146,0,0.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
+                    <input type="checkbox" value="${s.id}" onchange="updateCotizPreview()" style="accent-color:var(--orange);flex-shrink:0;">
+                    <div style="flex:1;"><div style="font-size:13px;font-weight:700;color:var(--text);">${s.nombre}</div><div style="font-size:11px;color:var(--text2);">${s.desc}</div></div>
+                    <div style="font-size:13px;font-weight:700;color:var(--orange);flex-shrink:0;">$${s.precio_unit.toLocaleString()}</div>
+                  </label>`).join('')}
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+      <div style="position:sticky;top:76px;">
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-tag">Resumen</div>
+          <div id="cotiz-resumen"><div class="empty"><div class="empty-ico" style="font-size:22px;">📋</div><div class="empty-txt" style="font-size:12px;">Selecciona un paquete o servicios</div></div></div>
+        </div>
+        <button class="btn-save" style="width:100%;margin-bottom:8px;" onclick="guardarYDescargarPDF()">⬇️ Guardar y descargar PDF</button>
+        <button class="btn-cancel" style="width:100%;margin-bottom:8px;" onclick="soloGuardarCotizacion()">💾 Solo guardar</button>
+        <button class="btn-cancel" style="width:100%;background:rgba(10,132,255,0.12);border-color:rgba(10,132,255,0.25);color:#0a84ff;" onclick="enviarCotizacionCliente()">📧 Enviar al cliente</button>
+        <p id="cotiz-status" style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px;"></p>
+      </div>
+    </div>
+  `;
+  if (cotizEditId) {
+    document.getElementById('cotiz-status').textContent = '✏️ Editando cotización existente';
+  }
+}
+
+function setCotizTipo(tipo) {
+  cotizSeleccion.tipo = tipo;
+  cotizSeleccion.paqueteId = null;
+  cotizSeleccion.serviciosIds = [];
+  document.getElementById('cotiz-paquetes').style.display = tipo==='paquete' ? 'block' : 'none';
+  document.getElementById('cotiz-individuales').style.display = tipo==='individual' ? 'block' : 'none';
+  document.getElementById('btn-tipo-paquete').className = tipo==='paquete' ? 'btn-save' : 'btn-cancel';
+  document.getElementById('btn-tipo-individual').className = tipo==='individual' ? 'btn-save' : 'btn-cancel';
+  document.querySelectorAll('[id^="pkg-"]').forEach(el => { el.style.borderColor='transparent'; el.style.background=''; });
+  updateCotizPreview();
+}
+
+function selectPaquete(id) {
+  cotizSeleccion.paqueteId = id;
+  document.querySelectorAll('[id^="pkg-"]').forEach(el => { el.style.borderColor='transparent'; el.style.background=''; });
+  const el = document.getElementById('pkg-'+id);
+  if (el) { el.style.borderColor='var(--orange)'; el.style.background='rgba(243,146,0,0.05)'; }
+  updateCotizPreview();
+}
+
+function updateCotizPreview() {
+  cotizSeleccion.clienteNombre = document.getElementById('cq-cliente')?.value||'';
+  cotizSeleccion.proyectoNombre = document.getElementById('cq-proyecto')?.value||'';
+  let items = [], subtotal = 0;
+  if (cotizSeleccion.tipo==='paquete' && cotizSeleccion.paqueteId) {
+    const pkg = PAQUETES.find(p=>p.id===cotizSeleccion.paqueteId);
+    if (pkg) { items = pkg.servicios.map(sid=>{ const s=SERVICIOS_CATALOG.find(x=>x.id===sid); return s?{nombre:s.nombre,precio:0}:null; }).filter(Boolean); subtotal=pkg.precio_paquete; }
+  } else {
+    document.querySelectorAll('#cotiz-individuales input[type=checkbox]:checked').forEach(cb=>{ const s=SERVICIOS_CATALOG.find(x=>x.id===cb.value); if(s){items.push({nombre:s.nombre,precio:s.precio_unit});subtotal+=s.precio_unit;} });
+  }
+  const iva=subtotal*IVA, total=subtotal+iva;
+  const r=document.getElementById('cotiz-resumen');
+  if (!items.length) { r.innerHTML='<div class="empty"><div class="empty-ico" style="font-size:22px;">📋</div><div class="empty-txt" style="font-size:12px;">Selecciona un paquete o servicios</div></div>'; return; }
+  const nameHtml = cotizSeleccion.clienteNombre ? `<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;">${cotizSeleccion.clienteNombre}</div>` : '';
+  const projHtml = cotizSeleccion.proyectoNombre ? `<div style="font-size:11px;color:var(--text2);margin-bottom:12px;">${cotizSeleccion.proyectoNombre}</div>` : '';
+  const itemsHtml = items.map(i=>`<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span style="color:var(--text2);">${i.nombre}</span>${i.precio?`<span style="color:var(--text);font-weight:700;">$${i.precio.toLocaleString()}</span>`:'<span style="color:var(--orange);font-size:10px;">incluido</span>'}</div>`).join('');
+  r.innerHTML = nameHtml+projHtml+`<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.07);">${itemsHtml}</div>`+`<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:3px;"><span>Subtotal</span><span>$${subtotal.toLocaleString()}</span></div>`+`<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:8px;"><span>IVA (16%)</span><span>$${Math.round(iva).toLocaleString()}</span></div>`+`<div style="display:flex;justify-content:space-between;font-size:17px;font-weight:700;"><span>Total</span><span style="color:var(--orange);">$${Math.round(total).toLocaleString()}</span></div>`;
+}
+
+async function soloGuardarCotizacion() {
+  const ok = await saveCotizacionToSupabase();
+  if (ok) { notify('✅ Cotización guardada'); loadCotizacionesGuardadas(); switchCotizTab('guardadas'); }
+}
+
+async function guardarYDescargarPDF() {
+  const ok = await saveCotizacionToSupabase();
+  if (ok) { await generarPDF(); loadCotizacionesGuardadas(); }
+}
+
+async function saveCotizacionToSupabase() {
+  const cliente = document.getElementById('cq-cliente')?.value.trim();
+  const proyecto = document.getElementById('cq-proyecto')?.value.trim();
+  if (!cliente || !proyecto) { notify('Ingresa el nombre del cliente y del proyecto.'); return false; }
+  const correo = document.getElementById('cq-correo')?.value||'';
+  const fecha = document.getElementById('cq-fecha')?.value||'';
+  const notas = document.getElementById('cq-notas')?.value||'';
+  let serviciosIds = [], subtotal = 0;
+  if (cotizSeleccion.tipo==='paquete' && cotizSeleccion.paqueteId) {
+    const pkg = PAQUETES.find(p=>p.id===cotizSeleccion.paqueteId);
+    if (pkg) { serviciosIds=pkg.servicios; subtotal=pkg.precio_paquete; }
+  } else {
+    document.querySelectorAll('#cotiz-individuales input[type=checkbox]:checked').forEach(cb=>{ const s=SERVICIOS_CATALOG.find(x=>x.id===cb.value); if(s){serviciosIds.push(s.id);subtotal+=s.precio_unit;} });
+  }
+  const iva=Math.round(subtotal*IVA), total=subtotal+iva;
+  const payload = { cliente_nombre:cliente, proyecto_nombre:proyecto, tipo:cotizSeleccion.tipo, paquete_id:cotizSeleccion.paqueteId||null, servicios_ids:serviciosIds, subtotal, iva, total, notas, fecha_entrega:fecha, creado_por: currentUser?.nombre||currentUser?.email||'equipo' };
+
+  // Guardar en Supabase (metadatos) + Drive (PDF) via Apps Script
+  try {
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwFe0ptZ8h5D4SHX31AJgk3XAeZtlj_VIgTElTQUKnXgasZ5tV2GTupNRpGMHRTbtTlKw/exec';
+    callAppsScript(SCRIPT_URL, { action: 'guardarCotizacion', data: payload });
+  } catch(e) { console.warn('Drive save:', e); }
+
+  // También en Supabase para listar en el panel
+  let res;
+  if (cotizEditId) {
+    res = await api('/rest/v1/cotizaciones?id=eq.'+cotizEditId, { method:'PATCH', body:JSON.stringify(payload) });
+    cotizEditId = null;
+  } else {
+    res = await api('/rest/v1/cotizaciones', { method:'POST', body:JSON.stringify(payload) });
+  }
+  return true;
+}
+
+// ── ENVIAR COTIZACIÓN AL CLIENTE ──
+async function enviarCotizacionCliente() {
+  const cliente = document.getElementById('cq-cliente')?.value.trim();
+  const proyecto = document.getElementById('cq-proyecto')?.value.trim();
+  const correo = document.getElementById('cq-correo')?.value.trim();
+  if (!cliente || !proyecto) { notify('Ingresa nombre del cliente y proyecto.', 'error'); return; }
+  if (!correo) { notify('Ingresa el correo del cliente para enviar.', 'error'); return; }
+
+  const ok = await saveCotizacionToSupabase();
+  if (!ok) return;
+
+  // Construir HTML del resumen para el correo
+  let serviciosDetalle = [], subtotal = 0, paqueteNombre = '';
+  if (cotizSeleccion.tipo==='paquete' && cotizSeleccion.paqueteId) {
+    const pkg = PAQUETES.find(p=>p.id===cotizSeleccion.paqueteId);
+    if (pkg) { paqueteNombre=pkg.nombre; subtotal=pkg.precio_paquete; pkg.servicios.forEach(sid=>{ const s=SERVICIOS_CATALOG.find(x=>x.id===sid); if(s) serviciosDetalle.push(s); }); }
+  } else {
+    document.querySelectorAll('#cotiz-individuales input[type=checkbox]:checked').forEach(cb=>{ const s=SERVICIOS_CATALOG.find(x=>x.id===cb.value); if(s){serviciosDetalle.push(s);subtotal+=s.precio_unit;} });
+  }
+  const iva=Math.round(subtotal*IVA), total=subtotal+iva;
+  const fecha = document.getElementById('cq-fecha')?.value||'';
+  const notas = document.getElementById('cq-notas')?.value||'';
+  const fechaStr = fecha ? new Date(fecha+'T00:00:00').toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'}) : '';
+
+  const serviciosHtml = serviciosDetalle.map(s =>
+    `<tr><td style="padding:8px 12px;border-bottom:1px solid #f0ede8;font-size:13px;color:#1c1c1e;">${s.nombre}</td><td style="padding:8px 12px;border-bottom:1px solid #f0ede8;text-align:right;font-size:13px;${cotizSeleccion.tipo==='paquete'?'color:#F39200;':'color:#1c1c1e;font-weight:700;'}">${cotizSeleccion.tipo==='paquete'?'Incluido':'$'+s.precio_unit.toLocaleString()}</td></tr>`
+  ).join('');
+
+  const emailHtml = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f0ede8;font-family:'Century Gothic',Arial,sans-serif;">
+<div style="max-width:600px;margin:0 auto;padding:32px 16px;">
+  <div style="background:white;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+    <div style="background:#111;padding:32px 40px;text-align:center;">
+      <img src="https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0417eda0998bb179d2f25c_Logo-pagina.png" style="width:40px;height:40px;object-fit:contain;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.6);">NOMAND STUDIO</div>
+    </div>
+    <div style="padding:40px;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#F39200;margin-bottom:8px;">COTIZACIÓN DE SERVICIOS</div>
+      <h1 style="font-size:26px;font-weight:700;color:#1c1c1e;margin:0 0 6px;">${paqueteNombre||'Servicios a medida'}</h1>
+      <p style="font-size:14px;color:#6c6c70;margin:0 0 28px;">Para <strong>${cliente}</strong> · ${proyecto}${fechaStr?'<br><span style="color:#F39200;">Entrega estimada: '+fechaStr+'</span>':''}</p>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
+        <tr style="background:#f9f8f6;"><th style="padding:8px 12px;text-align:left;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#aeaeb2;">Servicio</th><th style="padding:8px 12px;text-align:right;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#aeaeb2;">Precio</th></tr>
+        ${serviciosHtml}
+      </table>
+      <div style="background:#f9f8f6;border-radius:12px;padding:20px;margin-bottom:24px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-size:13px;color:#6c6c70;">Subtotal</span><span style="font-size:13px;color:#1c1c1e;">$${subtotal.toLocaleString()}</span></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:12px;"><span style="font-size:13px;color:#6c6c70;">IVA (16%)</span><span style="font-size:13px;color:#1c1c1e;">$${iva.toLocaleString()}</span></div>
+        <div style="display:flex;justify-content:space-between;padding-top:12px;border-top:2px solid #F39200;"><span style="font-size:16px;font-weight:700;color:#1c1c1e;">Total</span><span style="font-size:20px;font-weight:700;color:#F39200;">$${total.toLocaleString()}</span></div>
+      </div>
+      ${notas?`<div style="background:rgba(243,146,0,0.08);border-left:3px solid #F39200;border-radius:8px;padding:14px 16px;margin-bottom:24px;"><div style="font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#F39200;margin-bottom:4px;">NOTAS</div><p style="font-size:13px;color:#6c6c70;margin:0;line-height:1.5;">${notas}</p></div>`:''}
+      <div style="text-align:center;margin-bottom:24px;">
+        <a href="https://nomand-studio-9e2abe.webflow.io" style="display:inline-block;background:#F39200;color:white;padding:14px 32px;border-radius:100px;font-size:14px;font-weight:700;text-decoration:none;">Ver portal de cliente →</a>
+      </div>
+      <p style="font-size:12px;color:#aeaeb2;text-align:center;line-height:1.6;">Esta cotización tiene validez de 15 días.<br>¿Tienes dudas? Escríbenos a <a href="mailto:nomand.studio@gmail.com" style="color:#F39200;">nomand.studio@gmail.com</a></p>
+    </div>
+    <div style="background:#111;padding:20px 40px;text-align:center;">
+      <p style="font-size:11px;color:rgba(255,255,255,0.3);margin:0;">🏔 Nomand Studio · nomand.studio · @nomand.studio</p>
+    </div>
+  </div>
+</div></body></html>`;
+
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwFe0ptZ8h5D4SHX31AJgk3XAeZtlj_VIgTElTQUKnXgasZ5tV2GTupNRpGMHRTbtTlKw/exec';
+  notify('📧 Enviando cotización...');
+  try {
+    await callAppsScript(SCRIPT_URL, {
+      action: 'enviarCotizacion',
+      to: correo,
+      subject: 'Cotización Nomand Studio — ' + proyecto,
+      html: emailHtml,
+      clienteNombre: cliente,
+      proyectoNombre: proyecto
+    });
+    notify('✅ Cotización enviada a ' + correo);
+    loadCotizacionesGuardadas();
+    switchCotizTab('guardadas');
+  } catch(e) {
+    notify('Error al enviar. Verifica el correo.', 'error');
+  }
+}
+
+async function editarCotizacion(id) {
+  const res = await api('/rest/v1/cotizaciones?id=eq.'+id+'&select=*');
+  const data = await res.json();
+  if (!data.length) return;
+  const c = data[0];
+  cotizEditId = id;
+  cotizSeleccion.tipo = c.tipo||'paquete';
+  cotizSeleccion.paqueteId = c.paquete_id||null;
+  switchCotizTab('nueva');
+  setTimeout(() => {
+    document.getElementById('cq-cliente').value = c.cliente_nombre||'';
+    document.getElementById('cq-proyecto').value = c.proyecto_nombre||'';
+    document.getElementById('cq-correo').value = '';
+    document.getElementById('cq-fecha').value = c.fecha_entrega||'';
+    document.getElementById('cq-notas').value = c.notas||'';
+    setCotizTipo(c.tipo||'paquete');
+    if (c.paquete_id) selectPaquete(c.paquete_id);
+    if (c.servicios_ids && c.tipo==='individual') {
+      c.servicios_ids.forEach(sid => { const cb=document.querySelector('#cotiz-individuales input[value="'+sid+'"]'); if(cb) cb.checked=true; });
+    }
+    updateCotizPreview();
+    document.getElementById('cotiz-status').textContent = '✏️ Editando cotización';
+  }, 100);
+}
+
+async function eliminarCotizacion(id) {
+  if (!confirm('¿Eliminar esta cotización?')) return;
+  await api('/rest/v1/cotizaciones?id=eq.'+id, { method:'DELETE' });
+  notify('✅ Cotización eliminada');
+  loadCotizacionesGuardadas();
+}
+
+async function descargarCotizGuardada(id) {
+  const res = await api('/rest/v1/cotizaciones?id=eq.'+id+'&select=*');
+  const data = await res.json();
+  if (!data.length) return;
+  const c = data[0];
+  cotizSeleccion.tipo = c.tipo||'paquete';
+  cotizSeleccion.paqueteId = c.paquete_id||null;
+  await generarPDF(c.cliente_nombre, c.proyecto_nombre, c.notas, c.fecha_entrega);
+}
+
+async function generarPDF(clienteArg, proyectoArg, notasArg, fechaArg) {
+  const cliente = clienteArg || document.getElementById('cq-cliente')?.value.trim();
+  const proyecto = proyectoArg || document.getElementById('cq-proyecto')?.value.trim();
+  if (!cliente || !proyecto) { notify('Ingresa el nombre del cliente y del proyecto primero.'); return; }
+  const notas = notasArg !== undefined ? notasArg : (document.getElementById('cq-notas')?.value||'');
+  const fecha = fechaArg || document.getElementById('cq-fecha')?.value||'';
+  const fechaStr = fecha ? new Date(fecha+'T00:00:00').toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'}) : '';
+  const hoy = new Date().toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'});
+  var MTN_URL = 'https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0e7aa0cfb6c29eb251dd45_mathias-reding--6uN87kZrdE-unsplash.jpg';
+  var LOGO = 'https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0417eda0998bb179d2f25c_Logo-pagina.png';
+  // Convertir imagen a base64 para evitar CORS en html2canvas
+  async function toBase64(url) {
+    try {
+      const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(url));
+      const blob = await res.blob();
+      return new Promise(r => { const reader = new FileReader(); reader.onload = e => r(e.target.result); reader.readAsDataURL(blob); });
+    } catch(e) { return url; }
+  }
+  var MTN = await toBase64(MTN_URL);
+  var serviciosDetalle = [], subtotal = 0, paqueteNombre = '', paqueteDesc = '';
+  if (cotizSeleccion.tipo==='paquete' && cotizSeleccion.paqueteId) {
+    var pkg = PAQUETES.find(function(p){return p.id===cotizSeleccion.paqueteId;});
+    if (pkg) { paqueteNombre=pkg.nombre; paqueteDesc=pkg.ideal; subtotal=pkg.precio_paquete; pkg.servicios.forEach(function(sid){var s=SERVICIOS_CATALOG.find(function(x){return x.id===sid;});if(s)serviciosDetalle.push(s);}); }
+  } else {
+    document.querySelectorAll('#cotiz-individuales input[type=checkbox]:checked').forEach(function(cb){var s=SERVICIOS_CATALOG.find(function(x){return x.id===cb.value;});if(s){serviciosDetalle.push(s);subtotal+=s.precio_unit;}});
+  }
+  var iva=Math.round(subtotal*IVA), total=subtotal+iva;
+  notify('⏳ Generando PDF...');
+  // Load jsPDF and html2canvas
+  function loadScript(src, cb) { var s=document.createElement('script');s.src=src;s.onload=cb;document.head.appendChild(s); }
+  loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', function() {
+    loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', function() {
+      // Build hidden HTML page
+      var div = document.createElement('div');
+      div.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;background:white;font-family:Arial,sans-serif;';
+      var css = '* { margin:0; padding:0; box-sizing:border-box; } body { font-family: Arial, sans-serif; } .page { width:794px; min-height:1123px; position:relative; overflow:hidden; page-break-after:always; display:flex; flex-direction:column; } .inner { padding:56px; flex:1; display:flex; flex-direction:column; position:relative; z-index:2; } .mtn { position:absolute; inset:0; background-image:url("'+MTN+'"); background-size:cover; background-position:center; z-index:0; } .ov-dark { position:absolute; inset:0; background:linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.65) 100%); z-index:1; } .ov-light { position:absolute; inset:0; background:linear-gradient(to bottom, rgba(245,243,240,0.88) 0%, rgba(245,243,240,0.75) 50%, rgba(245,243,240,0.88) 100%); z-index:1; } .glass-d { background:rgba(0,0,0,0.38); border:1px solid rgba(255,255,255,0.14); border-radius:18px; } .glass-w { background:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.8); border-radius:18px; } .lbl-o { font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:#F39200; font-weight:700; } .lbl-w { font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:rgba(255,255,255,0.5); font-weight:700; }';
+
+      function hdr(label, light) {
+        var border=light?'rgba(0,0,0,0.1)':'rgba(255,255,255,0.12)', sub=light?'#6c6c70':'rgba(255,255,255,0.45)';
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:16px;border-bottom:1px solid '+border+';margin-bottom:36px;"><div style="display:flex;align-items:center;gap:8px;"><img src="'+LOGO+'" style="width:28px;height:28px;object-fit:contain;"><span style="font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:'+(light?'#1c1c1e':'rgba(255,255,255,0.7)')+';">NOMAND STUDIO</span></div><div style="text-align:right;"><div style="font-size:10px;color:'+sub+';letter-spacing:0.1em;text-transform:uppercase;">'+label+'</div><div style="font-size:11px;color:'+sub+';margin-top:3px;">'+proyecto+'</div></div></div>';
+      }
+
+      var h = '<style>'+css+'</style>';
+
+      // P1 Portada
+      h += '<div class="page"><div class="mtn"></div><div class="ov-dark"></div><div class="inner" style="justify-content:space-between;align-items:center;text-align:center;">';
+      h += '<div style="display:flex;flex-direction:column;align-items:center;gap:8px;"><img src="'+LOGO+'" style="width:56px;height:56px;object-fit:contain;"><span style="font-size:10px;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;color:rgba(255,255,255,0.6);">NOMAND STUDIO</span></div>';
+      h += '<div><div class="lbl-w" style="margin-bottom:24px;">COTIZACIÓN DE SERVICIOS</div><div style="font-size:52px;font-weight:700;font-style:italic;color:white;line-height:1.1;margin-bottom:4px;">Exploramos ideas,</div><div style="font-size:52px;font-weight:700;font-style:italic;color:white;line-height:1.1;">creamos <span style="color:#F39200;">identidad.</span></div></div>';
+      h += '<div class="glass-d" style="display:inline-flex;align-items:center;gap:20px;padding:13px 28px;"><span style="font-size:11px;color:rgba(255,255,255,0.75);">@nomand.studio</span><span style="color:rgba(255,255,255,0.25);">·</span><span style="font-size:11px;color:rgba(255,255,255,0.75);">55 7875 0062</span><span style="color:rgba(255,255,255,0.25);">·</span><span style="font-size:11px;color:rgba(255,255,255,0.75);">nomand.studio@gmail.com</span></div>';
+      h += '</div></div>';
+
+      // P2 Propuesta
+      h += '<div class="page"><div class="mtn" style="filter:grayscale(20%) brightness(1.1);"></div><div class="ov-light"></div><div class="inner">';
+      h += hdr('Propuesta', true);
+      h += '<div class="glass-w" style="padding:22px 28px;text-align:center;margin-bottom:28px;"><div style="font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:#aeaeb2;font-weight:700;margin-bottom:8px;">PREPARADO PARA</div><div style="font-size:24px;font-weight:700;color:#1c1c1e;margin-bottom:3px;">'+cliente+'</div><div style="font-size:13px;color:#6c6c70;">para <strong>'+proyecto+'</strong></div>'+(fechaStr?'<div style="font-size:13px;color:#F39200;margin-top:6px;font-weight:600;">Entrega: '+fechaStr+'</div>':'')+'</div>';
+      h += '<div style="text-align:center;margin-bottom:24px;"><div class="lbl-o" style="margin-bottom:8px;">NUESTRA PROPUESTA</div><div style="font-size:30px;font-weight:700;font-style:italic;color:#1c1c1e;">'+(paqueteNombre||'Servicios a medida')+'</div>'+(paqueteDesc?'<div style="font-size:13px;color:#6c6c70;margin-top:8px;max-width:480px;margin-left:auto;margin-right:auto;line-height:1.5;">'+paqueteDesc+'</div>':'')+'</div>';
+      h += '<div class="lbl-o" style="text-align:center;margin-bottom:14px;">QUÉ VAMOS A HACER</div>';
+      serviciosDetalle.forEach(function(s){h+='<div class="glass-w" style="display:flex;gap:12px;align-items:flex-start;padding:12px 16px;margin-bottom:7px;"><div style="width:7px;height:7px;border-radius:50%;background:#F39200;flex-shrink:0;margin-top:5px;"></div><div><div style="font-size:13px;font-weight:700;color:#1c1c1e;margin-bottom:2px;">'+s.nombre+'</div><div style="font-size:11px;color:#6c6c70;line-height:1.4;">'+s.desc+'</div></div></div>';});
+      if(notas)h+='<div style="margin-top:12px;padding:14px 18px;background:rgba(243,146,0,0.08);border-left:3px solid #F39200;border-radius:10px;"><div class="lbl-o" style="margin-bottom:4px;">NOTAS</div><div style="font-size:12px;color:#6c6c70;line-height:1.5;">'+notas+'</div></div>';
+      h += '</div></div>';
+
+      // P3 Proceso
+      h += '<div class="page"><div class="mtn"></div><div class="ov-dark"></div><div class="inner">';
+      h += hdr('Proceso', false);
+      h += '<div style="text-align:center;margin-bottom:36px;"><div class="lbl-w" style="margin-bottom:10px;">CÓMO TRABAJAMOS</div><div style="font-size:34px;font-weight:700;font-style:italic;color:white;">Tu proyecto, paso a paso</div></div>';
+      PROCESO.forEach(function(p,i){h+='<div class="glass-d" style="display:flex;gap:16px;align-items:flex-start;padding:16px 20px;margin-bottom:'+(i===PROCESO.length-1?'0':'10px')+';text-align:left;"><div style="width:40px;height:40px;border-radius:50%;border:1px solid rgba(243,146,0,0.35);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#F39200;flex-shrink:0;">'+p.paso+'</div><div style="padding-top:4px;"><div style="font-size:14px;font-weight:700;color:white;margin-bottom:2px;">'+p.titulo+'</div><div style="font-size:11px;color:#F39200;margin-bottom:4px;font-weight:600;">'+p.tiempo+'</div><div style="font-size:12px;color:rgba(255,255,255,0.55);line-height:1.4;">'+p.desc+'</div></div></div>';});
+      h += '<div class="glass-d" style="text-align:center;padding:22px 28px;margin-top:14px;"><div class="lbl-w" style="margin-bottom:8px;">NUESTRO COMPROMISO</div><div style="font-size:15px;font-style:italic;font-weight:300;color:white;line-height:1.6;">Exploramos ideas, creamos identidad.<br>Tu marca merece ser memorable.</div></div>';
+      h += '</div></div>';
+
+      // P4 Inversión
+      h += '<div class="page"><div class="mtn" style="filter:grayscale(20%) brightness(1.05);"></div><div class="ov-light"></div><div class="inner">';
+      h += hdr('Inversión', true);
+      h += '<div style="text-align:center;margin-bottom:24px;"><div class="lbl-o" style="margin-bottom:8px;">TU INVERSIÓN</div><div style="font-size:30px;font-weight:700;font-style:italic;color:#1c1c1e;">'+(paqueteNombre||'Servicios seleccionados')+'</div></div>';
+      serviciosDetalle.forEach(function(s){h+='<div class="glass-w" style="display:flex;justify-content:space-between;align-items:center;padding:11px 16px;margin-bottom:7px;"><div style="font-size:13px;font-weight:600;color:#1c1c1e;">'+s.nombre+'</div>'+(cotizSeleccion.tipo==='paquete'?'<div style="font-size:11px;color:#F39200;font-weight:700;background:rgba(243,146,0,0.1);padding:3px 12px;border-radius:100px;">Incluido</div>':'<div style="font-size:13px;font-weight:700;color:#1c1c1e;">$'+s.precio_unit.toLocaleString()+'</div>')+'</div>';});
+      h += '<div style="background:rgba(0,0,0,0.78);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:28px;text-align:center;margin-top:18px;">';
+      if(cotizSeleccion.tipo==='paquete'&&cotizSeleccion.paqueteId){var pk2=PAQUETES.find(function(p){return p.id===cotizSeleccion.paqueteId;});if(pk2)h+='<div style="font-size:12px;color:#34c759;margin-bottom:12px;font-weight:600;">✓ Ahorras $'+pk2.ahorro.toLocaleString()+' con este paquete</div>';}
+      h += '<div style="display:flex;justify-content:center;gap:36px;margin-bottom:16px;"><div><div style="font-size:9px;color:rgba(255,255,255,0.35);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:4px;">Subtotal</div><div style="font-size:18px;font-weight:700;color:white;">$'+subtotal.toLocaleString()+'</div></div><div style="width:1px;background:rgba(255,255,255,0.08);"></div><div><div style="font-size:9px;color:rgba(255,255,255,0.35);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:4px;">IVA 16%</div><div style="font-size:18px;font-weight:700;color:white;">$'+iva.toLocaleString()+'</div></div></div>';
+      h += '<div style="width:36px;height:1px;background:#F39200;margin:0 auto 14px;opacity:0.6;"></div><div style="font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:6px;">TOTAL</div><div style="font-size:46px;font-weight:700;color:#F39200;line-height:1;">$'+total.toLocaleString()+'</div><div style="font-size:11px;color:rgba(255,255,255,0.25);margin-top:6px;">Pesos mexicanos · IVA incluido</div></div>';
+      h += '</div></div>';
+
+      // P5 Formas de pago
+      h += '<div class="page"><div class="mtn"></div><div class="ov-dark"></div><div class="inner">';
+      h += hdr('Formas de pago', false);
+      h += '<div style="text-align:center;margin-bottom:32px;"><div class="lbl-w" style="margin-bottom:8px;">FORMAS DE PAGO</div><div style="font-size:34px;font-weight:700;font-style:italic;color:white;">Flexible para ti</div></div>';
+      var pagos=[{num:'01',t:'Anticipo y liquidación',d:'50% al inicio y 50% contra entrega final.'},{num:'02',t:'Pago en tres partes',d:'33% inicio, 33% a la mitad y 34% contra entrega.'},{num:'03',t:'Pago total por adelantado',d:'100% al inicio. Descuento especial del 5%.'},{num:'04',t:'Mensualidades',d:'Para servicios recurrentes. Se cobra al inicio de cada mes.'}];
+      pagos.forEach(function(p){h+='<div class="glass-d" style="display:flex;gap:16px;align-items:flex-start;padding:16px 20px;margin-bottom:9px;text-align:left;"><div style="font-size:20px;font-weight:700;font-style:italic;color:rgba(243,146,0,0.35);flex-shrink:0;line-height:1;">'+p.num+'</div><div><div style="font-size:13px;font-weight:700;color:white;margin-bottom:3px;">'+p.t+'</div><div style="font-size:12px;color:rgba(255,255,255,0.5);line-height:1.4;">'+p.d+'</div></div></div>';});
+      h += '<div class="glass-d" style="text-align:center;padding:14px 24px;margin-top:8px;"><div style="font-size:12px;color:rgba(255,255,255,0.6);">Transferencia · Depósito · Tarjeta de crédito/débito<br><span style="color:#F39200;font-weight:600;">Todos los precios en pesos mexicanos (MXN)</span></div></div>';
+      h += '</div></div>';
+
+      // P6 Términos
+      h += '<div class="page"><div class="mtn" style="filter:grayscale(30%) brightness(1.1);"></div><div class="ov-light"></div><div class="inner">';
+      h += hdr('Términos', true);
+      h += '<div style="text-align:center;margin-bottom:22px;"><div class="lbl-o" style="margin-bottom:8px;">TÉRMINOS Y CONDICIONES</div><div style="font-size:28px;font-weight:700;font-style:italic;color:#1c1c1e;">Antes de comenzar</div></div>';
+      h += '<div class="glass-w" style="padding:22px 26px;flex:1;"><div style="font-size:11px;color:#3a3a3a;line-height:2;white-space:pre-line;">'+TERMINOS+'</div></div>';
+      h += '<div style="text-align:center;margin-top:20px;"><div style="font-size:10px;color:#aeaeb2;letter-spacing:0.08em;">NOMAND STUDIO · @nomand.studio · nomand.studio@gmail.com · 55 7875 0062</div><div style="font-size:10px;color:#F39200;margin-top:3px;font-style:italic;">Cotización válida por 15 días · '+hoy+'</div></div>';
+      h += '</div></div>';
+
+      div.innerHTML = h;
+      document.body.appendChild(div);
+
+      // Convert to PDF using jsPDF + html2canvas
+      var pages = div.querySelectorAll('.page');
+      var { jsPDF } = window.jspdf;
+      var pdf = new jsPDF({ orientation:'portrait', unit:'px', format:[794,1123] });
+      var pageArr = Array.from(pages);
+      var idx = 0;
+
+      function captureNext() {
+        if (idx >= pageArr.length) {
+          pdf.save('Cotizacion_'+proyecto.replace(/\s+/g,'_')+'.pdf');
+          document.body.removeChild(div);
+          notify('✅ PDF descargado: Cotizacion_'+proyecto+'');
+          return;
+        }
+        html2canvas(pageArr[idx], { scale:1.5, useCORS:true, allowTaint:true, backgroundColor:null }).then(function(canvas) {
+          var imgData = canvas.toDataURL('image/jpeg', 0.92);
+          if (idx > 0) pdf.addPage([794,1123]);
+          pdf.addImage(imgData, 'JPEG', 0, 0, 794, 1123);
+          idx++;
+          captureNext();
+        });
+      }
+      setTimeout(captureNext, 500);
+    });
+  });
+}
+
+
+
+function toggleMenu(id, btn) {
+  // Close all menus first
+  document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('active'));
+  
+  const menu = document.getElementById(id);
+  if (!menu) return;
+  
+  // Position menu based on button location
+  const rect = btn.getBoundingClientRect();
+  menu.style.top = (rect.bottom + 4) + 'px';
+  menu.style.left = (rect.right - menu.offsetWidth - 10) + 'px';
+  menu.classList.add('active');
+  
+  // Close on outside click
+  setTimeout(() => {
+    document.addEventListener('click', function closeMenu() {
+      document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('active'));
+      document.removeEventListener('click', closeMenu);
+    });
+  }, 50);
+}
+
+function editarCliente(cliente) {
+  // Show edit modal
+  const existing = document.getElementById('modal-editar-cliente');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'modal-editar-cliente';
+  modal.className = 'modal active';
+  modal.innerHTML = 
+    '<div class="modal-ov" onclick="document.getElementById(\'modal-editar-cliente\').remove()"></div>' +
+    '<div class="modal-box">' +
+      '<button class="modal-close" onclick="document.getElementById(\'modal-editar-cliente\').remove()">✕</button>' +
+      '<div class="modal-title">Editar cliente</div>' +
+      '<div class="form-grid">' +
+        '<div class="fg"><label>Nombre</label><input type="text" id="ec-nombre" value="'+(cliente.nombre||'')+'"></div>' +
+        '<div class="fg"><label>Empresa</label><input type="text" id="ec-empresa" value="'+(cliente.empresa||'')+'"></div>' +
+        '<div class="fg"><label>Correo</label><input type="email" id="ec-correo" value="'+(cliente.correo||'')+'"></div>' +
+        '<div class="fg"><label>Teléfono</label><input type="text" id="ec-tel" value="'+(cliente.telefono||'')+'"></div>' +
+        '<div class="fg form-full"><label>Estado</label>' +
+          '<select id="ec-estado">' +
+            '<option '+(cliente.estado==='Activo'?'selected':'')+'>Activo</option>' +
+            '<option '+(cliente.estado==='Pausado'?'selected':'')+'>Pausado</option>' +
+            '<option '+(cliente.estado==='Completado'?'selected':'')+'>Completado</option>' +
+          '</select>' +
+        '</div>' +
+      '</div>' +
+      '<div class="form-actions">' +
+        '<button class="btn-cancel" onclick="document.getElementById(\'modal-editar-cliente\').remove()">Cancelar</button>' +
+        '<button class="btn-save" onclick="guardarEdicionCliente(\''+cliente.id+'\')">Guardar cambios</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(modal);
+}
+
+async function guardarEdicionCliente(id) {
+  const nombre = document.getElementById('ec-nombre').value.trim();
+  const empresa = document.getElementById('ec-empresa').value.trim();
+  const correo = document.getElementById('ec-correo').value.trim();
+  const telefono = document.getElementById('ec-tel').value.trim();
+  const estado = document.getElementById('ec-estado').value;
+
+  await api('/rest/v1/clientes?id=eq.' + id, {
+    method: 'PATCH',
+    body: JSON.stringify({ nombre, empresa, correo, telefono, estado })
+  });
+
+  document.getElementById('modal-editar-cliente').remove();
+  notify('✅ Cliente actualizado.');
+  goTo('clientes');
+}
+
+async function eliminarCliente(id, nombre) {
+  if (!confirm('¿Eliminar a ' + nombre + '? Esta acción no se puede deshacer.')) return;
+  
+  // Delete related records first
+  await api('/rest/v1/archivos?cliente_id=eq.' + id, { method: 'DELETE' });
+  await api('/rest/v1/proyectos?cliente_id=eq.' + id, { method: 'DELETE' });
+  await api('/rest/v1/clientes?id=eq.' + id, { method: 'DELETE' });
+  
+  notify('✅ Cliente ' + nombre + ' eliminado.');
+  goTo('clientes');
+}
+
+function autoCheckServicios(paquete) {
+  const map = {
+    'Nómada Esencial': ['Diseño gráfico', 'Identidad de marca'],
+    'Nómada Pro': ['Identidad de marca', 'Diseño gráfico', 'Manejo de redes', 'Marketing digital'],
+    'Cumbre Visual': ['Identidad de marca', 'Branding', 'Diseño gráfico', 'Fotografía', 'Manejo de redes'],
+    'Expedición Total': ['Identidad de marca', 'Branding', 'Diseño gráfico', 'Fotografía', 'Manejo de redes', 'Video', 'Marketing digital', 'Estrategia', 'Sitio web'],
+    'Personalizado': []
+  };
+
+  const serviciosIncluidos = map[paquete] || [];
+
+  document.querySelectorAll('#servicios-check input[type=checkbox]').forEach(cb => {
+    cb.checked = serviciosIncluidos.includes(cb.value);
+    const label = cb.closest('label');
+    if (label) {
+      label.style.background = cb.checked ? 'rgba(243,146,0,0.08)' : 'rgba(255,255,255,0.5)';
+      label.style.borderColor = cb.checked ? 'rgba(243,146,0,0.3)' : 'rgba(0,0,0,0.08)';
+      label.style.color = cb.checked ? 'var(--orange)' : 'var(--text2)';
+    }
+  });
+}
+
+function fIco(n){
+  const e=(n||'').split('.').pop().toLowerCase();
+  if(['jpg','jpeg','png','gif','webp','heic'].includes(e))return'🖼';
+  if(e==='pdf')return'📄';
+  if(['mp4','mov','avi'].includes(e))return'🎬';
+  if(['mp3','wav','m4a'].includes(e))return'🎵';
+  return'📎';
+}
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded', () => {
+  const s = gs();
+  if (s.access_token && s.user) initApp(s.user);
+  document.getElementById('lpass').addEventListener('keypress', e => { if(e.key==='Enter') doLogin(); });
+});
+</script>
+</body>
+</html>
