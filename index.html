@@ -1452,7 +1452,7 @@ async function saveCotizacionToSupabase() {
 
   // Guardar en Supabase (metadatos) + Drive (PDF) via Apps Script
   try {
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwFe0ptZ8h5D4SHX31AJgk3XAeZtlj_VIgTElTQUKnXgasZ5tV2GTupNRpGMHRTbtTlKw/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzsDxjjoEob5YSPjt6Eav9DKhrH2Az4WdYFsN6u1GWPnnDULOfOBK0SjXcL_Zso4xu8/exec';
     callAppsScript(SCRIPT_URL, { action: 'guardarCotizacion', data: payload });
   } catch(e) { console.warn('Drive save:', e); }
 
@@ -1527,7 +1527,7 @@ async function enviarCotizacionCliente() {
   </div>
 </div></body></html>`;
 
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwFe0ptZ8h5D4SHX31AJgk3XAeZtlj_VIgTElTQUKnXgasZ5tV2GTupNRpGMHRTbtTlKw/exec';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzsDxjjoEob5YSPjt6Eav9DKhrH2Az4WdYFsN6u1GWPnnDULOfOBK0SjXcL_Zso4xu8/exec';
   notify('📧 Enviando cotización...');
   try {
     await callAppsScript(SCRIPT_URL, {
