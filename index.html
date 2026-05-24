@@ -1596,17 +1596,28 @@ async function generarPDF(clienteArg, proyectoArg, notasArg, fechaArg) {
   const fecha = fechaArg || document.getElementById('cq-fecha')?.value||'';
   const fechaStr = fecha ? new Date(fecha+'T00:00:00').toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'}) : '';
   const hoy = new Date().toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'});
-  var MTN_URL = 'https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0e7aa0cfb6c29eb251dd45_mathias-reding--6uN87kZrdE-unsplash.jpg';
   var LOGO = 'https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0417eda0998bb179d2f25c_Logo-pagina.png';
-  // Convertir imagen a base64 para evitar CORS en html2canvas
-  async function toBase64(url) {
-    try {
-      const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(url));
-      const blob = await res.blob();
-      return new Promise(r => { const reader = new FileReader(); reader.onload = e => r(e.target.result); reader.readAsDataURL(blob); });
-    } catch(e) { return url; }
-  }
-  var MTN = await toBase64(MTN_URL);
+  // Convertir imagen de montañas a base64 usando canvas nativo (sin proxy, sin CORS)
+  var MTN = await new Promise(function(resolve) {
+    var img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function() {
+      var c = document.createElement('canvas');
+      c.width = img.naturalWidth || 1920;
+      c.height = img.naturalHeight || 1280;
+      var ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      try { resolve(c.toDataURL('image/jpeg', 0.85)); }
+      catch(e) {
+        // Si aún falla por CORS, usar color sólido oscuro como fallback
+        resolve('data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==');
+      }
+    };
+    img.onerror = function() {
+      resolve('data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==');
+    };
+    img.src = 'https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0e7aa0cfb6c29eb251dd45_mathias-reding--6uN87kZrdE-unsplash.jpg';
+  });
   var serviciosDetalle = [], subtotal = 0, paqueteNombre = '', paqueteDesc = '';
   if (cotizSeleccion.tipo==='paquete' && cotizSeleccion.paqueteId) {
     var pkg = PAQUETES.find(function(p){return p.id===cotizSeleccion.paqueteId;});
@@ -1697,9 +1708,10 @@ async function generarPDF(clienteArg, proyectoArg, notasArg, fechaArg) {
 
       function captureNext() {
         if (idx >= pageArr.length) {
-          pdf.save('Cotizacion_'+proyecto.replace(/\s+/g,'_')+'.pdf');
+          var nombrePDF = 'Cotizacion_' + proyecto.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]/g,'').replace(/\s+/g,'_') + '_Nomand.pdf';
+          pdf.save(nombrePDF);
           document.body.removeChild(div);
-          notify('✅ PDF descargado: Cotizacion_'+proyecto+'');
+          notify('✅ PDF descargado: ' + nombrePDF);
           return;
         }
         html2canvas(pageArr[idx], { scale:1.5, useCORS:true, allowTaint:true, backgroundColor:null }).then(function(canvas) {
