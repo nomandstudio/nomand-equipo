@@ -1209,23 +1209,23 @@ async function editarRol(id, rolActual) {
 
 // ── COTIZACIÓN ──
 const SERVICIOS_CATALOG = [
-  { id:'identidad', nombre:'Identidad de Marca', desc:'Logo, paleta de colores, tipografía y manual de marca básico', precio_unit:8500, categoria:'Branding' },
-  { id:'branding', nombre:'Branding Completo', desc:'Identidad + manual de marca completo + aplicaciones básicas', precio_unit:14500, categoria:'Branding' },
+  { id:'identidad', nombre:'Identidad de Marca', desc:'Logo, paleta de colores, tipografía y manual de marca básico', precio_unit:10000, categoria:'Branding' },
+  { id:'branding', nombre:'Branding Completo', desc:'Identidad + manual de marca completo + aplicaciones básicas', precio_unit:15500, categoria:'Branding' },
   { id:'disenio_grafico', nombre:'Diseño Gráfico', desc:'Piezas gráficas digitales e impresas (por pieza)', precio_unit:1200, categoria:'Diseño' },
   { id:'redes_setup', nombre:'Setup Redes Sociales', desc:'Configuración y diseño de perfiles en 2 redes sociales', precio_unit:3500, categoria:'Redes' },
-  { id:'redes_mensual', nombre:'Manejo de Redes Sociales', desc:'Gestión mensual de 2 redes, 12 publicaciones/mes + stories', precio_unit:6500, categoria:'Redes' },
-  { id:'marketing', nombre:'Marketing Digital', desc:'Estrategia y ejecución de campañas digitales (mensual)', precio_unit:8000, categoria:'Marketing' },
+  { id:'redes_mensual', nombre:'Manejo de Redes Sociales', desc:'Gestión mensual — 1 plataforma: 8 publicaciones, contenido estático. 3 plataformas: 10-12 publicaciones, contenido dinámico + monitoreo', precio_unit:6000, categoria:'Redes' },
+  { id:'marketing', nombre:'Marketing Digital', desc:'Estrategia y ejecución de campañas digitales (mensual)', precio_unit:8500, categoria:'Marketing' },
   { id:'fotografia', nombre:'Fotografía de Marca', desc:'Sesión fotográfica, 30 fotos editadas', precio_unit:5500, categoria:'Fotografía' },
-  { id:'estrategia', nombre:'Estrategia de Comunicación', desc:'Plan estratégico de comunicación y posicionamiento', precio_unit:7000, categoria:'Estrategia' },
-  { id:'sitio_web', nombre:'Sitio Web', desc:'Diseño y desarrollo web profesional (hasta 5 páginas)', precio_unit:22000, categoria:'Digital' },
+  { id:'estrategia', nombre:'Estrategia de Comunicación', desc:'Plan estratégico de comunicación y posicionamiento', precio_unit:7500, categoria:'Estrategia' },
+  { id:'sitio_web', nombre:'Sitio Web', desc:'Diseño y desarrollo web profesional (hasta 5 páginas)', precio_unit:17000, categoria:'Digital' },
   { id:'video', nombre:'Video de Marca', desc:'Video promocional o reels (hasta 60 seg)', precio_unit:9500, categoria:'Producción' }
 ];
 
 const PAQUETES = [
-  { id:'esencial', nombre:'Nómada Esencial', tagline:'Tu identidad, tu punto de partida', servicios:['identidad','disenio_grafico'], precio_paquete:11000, ahorro:1700, ideal:'Emprendedores que están comenzando y necesitan una identidad sólida' },
-  { id:'pro', nombre:'Nómada Pro', tagline:'Presencia digital completa', servicios:['identidad','disenio_grafico','redes_setup','redes_mensual'], precio_paquete:22000, ahorro:3700, ideal:'Negocios que quieren crecer su presencia digital con identidad propia' },
-  { id:'cumbre', nombre:'Cumbre Visual', tagline:'Imagen profesional de alto impacto', servicios:['branding','disenio_grafico','redes_mensual','fotografia'], precio_paquete:32000, ahorro:5500, ideal:'Marcas que necesitan diferenciarse con una imagen premium' },
-  { id:'total', nombre:'Expedición Total', tagline:'Tu marca, tu ecosistema completo', servicios:['branding','disenio_grafico','redes_mensual','marketing','fotografia','estrategia'], precio_paquete:48000, ahorro:9000, ideal:'Empresas que quieren una solución integral de comunicación' }
+  { id:'esencial', nombre:'Nómada Esencial', tagline:'Tu identidad, tu punto de partida', servicios:['identidad','disenio_grafico'], precio_paquete:10000, ahorro:1200, ideal:'Emprendedores que están comenzando y necesitan una identidad sólida' },
+  { id:'pro', nombre:'Nómada Pro', tagline:'Presencia digital completa', servicios:['identidad','disenio_grafico','redes_setup','redes_mensual'], precio_paquete:20000, ahorro:3500, ideal:'Negocios que quieren crecer su presencia digital con identidad propia' },
+  { id:'cumbre', nombre:'Cumbre Visual', tagline:'Imagen profesional de alto impacto', servicios:['branding','disenio_grafico','redes_mensual','fotografia'], precio_paquete:29000, ahorro:5500, ideal:'Marcas que necesitan diferenciarse con una imagen premium' },
+  { id:'total', nombre:'Expedición Total', tagline:'Tu marca, tu ecosistema completo', servicios:['branding','disenio_grafico','redes_mensual','marketing','fotografia','estrategia'], precio_paquete:43000, ahorro:43700, ideal:'Empresas que quieren una solución integral de comunicación' }
 ];
 
 const IVA = 0.16;
@@ -1233,7 +1233,7 @@ const TERMINOS = `1. VIGENCIA: Esta cotización tiene validez de 15 días natura
 
 2. PAGOS: Se requiere un anticipo del 50% para iniciar el proyecto. El 50% restante se liquida contra entrega final.
 
-3. REVISIONES: Cada servicio incluye hasta 3 rondas de revisión. Revisiones adicionales se cotizan por separado.
+3. REVISIONES: Cada servicio incluye hasta 2 rondas de revisión sobre la propuesta seleccionada. Revisiones adicionales se cotizan a $100/hora.
 
 4. TIEMPOS: Los tiempos de entrega inician una vez recibido el anticipo y el brief completo del cliente.
 
@@ -1453,7 +1453,12 @@ async function saveCotizacionToSupabase() {
   // Guardar en Supabase (metadatos) + Drive (PDF) via Apps Script
   try {
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzsDxjjoEob5YSPjt6Eav9DKhrH2Az4WdYFsN6u1GWPnnDULOfOBK0SjXcL_Zso4xu8/exec';
-    callAppsScript(SCRIPT_URL, { action: 'guardarCotizacion', data: payload });
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'guardarCotizacion', data: payload })
+    }).catch(e => console.warn('Drive save:', e));
   } catch(e) { console.warn('Drive save:', e); }
 
   // También en Supabase para listar en el panel
@@ -1530,13 +1535,19 @@ async function enviarCotizacionCliente() {
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzsDxjjoEob5YSPjt6Eav9DKhrH2Az4WdYFsN6u1GWPnnDULOfOBK0SjXcL_Zso4xu8/exec';
   notify('📧 Enviando cotización...');
   try {
-    await callAppsScript(SCRIPT_URL, {
-      action: 'enviarCotizacion',
-      to: correo,
-      subject: 'Cotización Nomand Studio — ' + proyecto,
-      html: emailHtml,
-      clienteNombre: cliente,
-      proyectoNombre: proyecto
+    // Usar fetch con no-cors para Apps Script (no retorna respuesta pero ejecuta)
+    await fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'enviarCotizacion',
+        to: correo,
+        subject: 'Cotización Nomand Studio — ' + proyecto,
+        html: emailHtml,
+        clienteNombre: cliente,
+        proyectoNombre: proyecto
+      })
     });
     notify('✅ Cotización enviada a ' + correo);
     loadCotizacionesGuardadas();
@@ -1846,9 +1857,26 @@ function fIco(n){
 }
 
 // ── INIT ──
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const s = gs();
-  if (s.access_token && s.user) initApp(s.user);
+  // SSO: aceptar token pasado desde Nomand sin pedir login de nuevo
+  const urlParams = new URLSearchParams(window.location.search);
+  const ssoToken = urlParams.get('sso');
+  if (ssoToken) {
+    try {
+      const r = await fetch(SB + '/auth/v1/user', {
+        headers: { 'apikey': KEY, 'Authorization': 'Bearer ' + ssoToken }
+      });
+      const u = await r.json();
+      if (u.id) {
+        ss({ access_token: ssoToken, user: u, remember: false });
+        window.history.replaceState({}, '', window.location.pathname);
+        initApp(u);
+      }
+    } catch(e) { console.warn('SSO error:', e); }
+  } else if (s.access_token && s.user) {
+    initApp(s.user);
+  }
   document.getElementById('lpass').addEventListener('keypress', e => { if(e.key==='Enter') doLogin(); });
 });
 </script>
