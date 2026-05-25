@@ -711,7 +711,31 @@ async function crearCliente() {
 
   const btn = document.getElementById('btn-crear-cliente');
   const status = document.getElementById('nc-status');
-  btn.disabled = true; btn.textContent = 'Creando...';
+  btn.disabled = true; btn.textContent = 'Verificando...';
+  status.textContent = 'Buscando registros existentes...';
+
+  // ── Validar duplicados ──
+  try {
+    const existentes = await api('/rest/v1/clientes?select=nombre,empresa,correo');
+    if (Array.isArray(existentes)) {
+      const duplicados = [];
+      existentes.forEach(c => {
+        if (c.nombre?.toLowerCase() === nombre.toLowerCase())
+          duplicados.push('Nombre del cliente "' + c.nombre + '"');
+        if (c.empresa?.toLowerCase() === empresa.toLowerCase())
+          duplicados.push('Empresa/marca "' + c.empresa + '"');
+        if (c.correo?.toLowerCase() === correo.toLowerCase())
+          duplicados.push('Correo "' + c.correo + '"');
+      });
+      if (duplicados.length > 0) {
+        notify('Ya existe un registro con: ' + [...new Set(duplicados)].join(', '), 'error');
+        btn.disabled = false; btn.textContent = 'Crear cliente y enviar acceso';
+        status.textContent = '';
+        return;
+      }
+    }
+  } catch(e) { console.warn('Duplicados check:', e); }
+
   status.textContent = 'Creando usuario en Supabase...';
 
   try {
@@ -1441,7 +1465,7 @@ function buildCotizPayload() {
   return { cliente_nombre:cliente, proyecto_nombre:proyecto, tipo:cotizSeleccion.tipo, paquete_id:cotizSeleccion.paqueteId||null, servicios_ids:serviciosIds, subtotal, iva, total, notas, fecha_entrega:fecha, creado_por: currentUser?.nombre||currentUser?.email||'equipo' };
 }
 
-async function enviarCotizacionCliente() {
+window.enviarCotizacionCliente = async function() {
   const cliente = document.getElementById('cq-cliente')?.value.trim();
   const proyecto = document.getElementById('cq-proyecto')?.value.trim();
   const correo = document.getElementById('cq-correo')?.value.trim();
@@ -1507,20 +1531,28 @@ async function enviarCotizacionCliente() {
       body: JSON.stringify({ action: 'enviarCotizacion', to: correo, subject: 'Tu cotizacion Nomand Studio - ' + proyecto, html: emailHtml, pdfBase64, nombrePDF })
     });
     notify('Cotizacion enviada a ' + correo);
-    loadCotizacionesGuardadas();
     switchCotizTab('guardadas');
+    await loadCotizacionesGuardadas();
   } catch(e) { notify('Error al enviar.', 'error'); }
 }
 
 
-async function soloGuardarCotizacion() {
+window.soloGuardarCotizacion = async function() {
   const ok = await saveCotizacionToSupabase();
-  if (ok) { notify('✅ Cotización guardada'); loadCotizacionesGuardadas(); switchCotizTab('guardadas'); }
+  if (ok) {
+    notify('Cotizacion guardada');
+    switchCotizTab('guardadas');
+    await loadCotizacionesGuardadas();
+  }
 }
 
-async function guardarYDescargarPDF() {
+window.guardarYDescargarPDF = async function() {
   const ok = await saveCotizacionToSupabase();
-  if (ok) { await generarPDF(); loadCotizacionesGuardadas(); }
+  if (ok) {
+    switchCotizTab('guardadas');
+    await loadCotizacionesGuardadas();
+    await generarPDF();
+  }
 }
 
 async function saveCotizacionToSupabase() {
@@ -1547,7 +1579,33 @@ async function saveCotizacionToSupabase() {
     document.querySelectorAll('#cotiz-individuales input[type=checkbox]:checked').forEach(cb=>{ const s=SERVICIOS_CATALOG.find(x=>x.id===cb.value); if(s){serviciosIds.push(s.id);subtotal+=s.precio_unit;} });
   }
   const iva=Math.round(subtotal*IVA), total=subtotal+iva;
-  const payload = { cliente_nombre:cliente, proyecto_nombre:proyecto, tipo:cotizSeleccion.tipo, paquete_id:cotizSeleccion.paqueteId||null, servicios_ids:serviciosIds, subtotal, iva, total, notas, fecha_entrega:fecha, creado_por: currentUser?.email||'equipo' };
+  const payload = { cliente_nombre:cliente, proyecto_nombre:proyecto, correo_cliente:correo, tipo:cotizSeleccion.tipo, paquete_id:cotizSeleccion.paqueteId||null, servicios_ids:serviciosIds, subtotal, iva, total, notas, fecha_entrega:fecha, creado_por: currentUser?.email||'equipo' };
+
+  // ── Validar duplicados (solo si no estamos editando ya) ──
+  if (!cotizEditId) {
+    const existentes = await api('/rest/v1/cotizaciones?select=id,cliente_nombre,proyecto_nombre');
+    if (Array.isArray(existentes)) {
+      const dup = existentes.find(c =>
+        c.cliente_nombre?.toLowerCase() === cliente.toLowerCase() &&
+        c.proyecto_nombre?.toLowerCase() === proyecto.toLowerCase()
+      );
+      if (dup) {
+        const confirmar = confirm(
+          'Ya existe una cotización para "' + dup.cliente_nombre + '" con el proyecto "' + dup.proyecto_nombre + '".\n\n' +
+          '¿Quieres modificar esa cotización en lugar de crear una nueva?'
+        );
+        if (confirmar) {
+          // Cargar la cotización existente para editarla
+          cotizEditId = dup.id;
+          notify('Editando cotización existente de ' + dup.cliente_nombre);
+        } else {
+          notify('Operación cancelada. Cambia el nombre del cliente o proyecto para crear una nueva.', 'error');
+          return false;
+        }
+      }
+    }
+  }
+
   let res;
   if (cotizEditId) {
     res = await api('/rest/v1/cotizaciones?id=eq.'+cotizEditId, { method:'PATCH', body:JSON.stringify(payload) });
@@ -1555,7 +1613,7 @@ async function saveCotizacionToSupabase() {
   } else {
     res = await api('/rest/v1/cotizaciones', { method:'POST', body:JSON.stringify(payload) });
   }
-  return res.ok || res.status === 201 || res.status === 204;
+  return true;
 }
 
 async function editarCotizacion(id) {
@@ -1583,9 +1641,25 @@ async function editarCotizacion(id) {
 }
 
 async function eliminarCotizacion(id) {
-  if (!confirm('¿Eliminar esta cotización?')) return;
+  if (!confirm('¿Eliminar esta cotización? Se moverá a la carpeta Eliminadas en Drive.')) return;
+
+  // Obtener datos antes de borrar
+  const data = await api('/rest/v1/cotizaciones?id=eq.'+id+'&select=*');
+  const c = Array.isArray(data) && data.length ? data[0] : null;
+
+  // Mover PDF en Drive via Apps Script
+  if (c) {
+    const nombrePDF = 'Cotizacion_' + (c.proyecto_nombre||'').replace(/[^a-zA-Z0-9]/g,'_') + '_Nomand.pdf';
+    fetch('https://script.google.com/macros/s/AKfycbzsDxjjoEob5YSPjt6Eav9DKhrH2Az4WdYFsN6u1GWPnnDULOfOBK0SjXcL_Zso4xu8/exec', {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'moverCotizacionEliminada', nombrePDF })
+    }).catch(()=>{});
+  }
+
+  // Borrar de Supabase
   await api('/rest/v1/cotizaciones?id=eq.'+id, { method:'DELETE' });
-  notify('✅ Cotización eliminada');
+  notify('Cotizacion eliminada y movida a carpeta Eliminadas');
   loadCotizacionesGuardadas();
 }
 
@@ -1885,6 +1959,8 @@ async function crearClienteDesdeCotiz(id) {
       document.getElementById('nc-fecha').value = c.fecha_entrega || '';
     if (document.getElementById('nc-total'))
       document.getElementById('nc-total').value = c.total || '';
+    if (document.getElementById('nc-correo') && c.correo_cliente)
+      document.getElementById('nc-correo').value = c.correo_cliente || '';
 
     // Seleccionar paquete si viene de uno
     const paqueteMap = {
@@ -1906,7 +1982,15 @@ async function crearClienteDesdeCotiz(id) {
         }
       }
     }
-    notify('Datos de la cotizacion cargados. Completa el correo y confirma.');
+    // Hacer scroll al campo de correo y darle foco
+    const correoField = document.getElementById('nc-correo');
+    if (correoField) {
+      correoField.focus();
+      correoField.style.borderColor = 'rgba(243,146,0,0.6)';
+      correoField.style.boxShadow = '0 0 0 3px rgba(243,146,0,0.15)';
+      correoField.placeholder = 'Requerido para enviar acceso';
+    }
+    notify('Datos cargados. Solo falta el correo y telefono del cliente.');
   }, 150);
 }
 
