@@ -423,7 +423,6 @@ async function api(path, opts={}) {
       ...(opts.headers||{})
     }
   });
-  // Si el token expiró, limpiar sesión y mostrar login
   if (r.status === 401) {
     localStorage.removeItem('nm_eq');
     document.getElementById('app-screen').style.display = 'none';
@@ -719,27 +718,19 @@ async function crearCliente() {
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx3V1t3njMEoQ9gmYWUMYh3UeMqVRHZx4xe8l90arAL7uuH_cmiRinFmfX2Q_rii7hT/exec';
 
     status.textContent = 'Creando acceso del cliente...';
-
-    // Crear usuario en Supabase con rol:cliente
     const SVC = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvd2R1dHp5cnNmbmNud2VqcGJ0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTEyMzY4MywiZXhwIjoyMDk0Njk5NjgzfQ.RQqdd0AqeJBVt3gRDMiZN-20ND1MvJSYbt83nUiH7IQ';
     const invRes = await fetch(SB + '/auth/v1/admin/invite', {
       method: 'POST',
       headers: { 'apikey': SVC, 'Authorization': 'Bearer ' + SVC, 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: correo, data: { nombre }, app_metadata: { rol: 'cliente' } })
     });
-    const invData = await invRes.json();
-
+    await invRes.json();
     status.textContent = 'Creando carpetas en Drive y enviando correo...';
-
-    // Apps Script: carpetas + correo bienvenida desde colaborador.nomand@gmail.com
-    await callAppsScript(SCRIPT_URL, {
-      action: 'createClientComplete',
-      clientName: empresa,
-      folders: servicios,
-      email: correo,
-      nombre: nombre,
-      sendWelcome: true
-    });
+    await fetch(SCRIPT_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'createClientComplete', clientName: empresa, folders: servicios, email: correo, nombre: nombre, sendWelcome: true })
+    }).catch(()=>{});
 
     status.textContent = 'Guardando en base de datos...';
 
@@ -1220,7 +1211,7 @@ const SERVICIOS_CATALOG = [
   { id:'branding', nombre:'Branding Completo', desc:'Identidad + manual de marca completo + aplicaciones básicas', precio_unit:15500, categoria:'Branding' },
   { id:'disenio_grafico', nombre:'Diseño Gráfico', desc:'Piezas gráficas digitales e impresas (por pieza)', precio_unit:1200, categoria:'Diseño' },
   { id:'redes_setup', nombre:'Setup Redes Sociales', desc:'Configuración y diseño de perfiles en 2 redes sociales', precio_unit:3500, categoria:'Redes' },
-  { id:'redes_mensual', nombre:'Manejo de Redes Sociales', desc:'Gestión mensual — 1 plataforma: 8 publicaciones, contenido estático. 3 plataformas: 10-12 publicaciones, contenido dinámico + monitoreo', precio_unit:6000, categoria:'Redes' },
+  { id:'redes_mensual', nombre:'Manejo de Redes Sociales', desc:'Gestión mensual de 2 redes, 12 publicaciones/mes + stories', precio_unit:6000, categoria:'Redes' },
   { id:'marketing', nombre:'Marketing Digital', desc:'Estrategia y ejecución de campañas digitales (mensual)', precio_unit:8500, categoria:'Marketing' },
   { id:'fotografia', nombre:'Fotografía de Marca', desc:'Sesión fotográfica, 30 fotos editadas', precio_unit:5500, categoria:'Fotografía' },
   { id:'estrategia', nombre:'Estrategia de Comunicación', desc:'Plan estratégico de comunicación y posicionamiento', precio_unit:7500, categoria:'Estrategia' },
@@ -1430,33 +1421,93 @@ function updateCotizPreview() {
   r.innerHTML = nameHtml+projHtml+`<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.07);">${itemsHtml}</div>`+`<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:3px;"><span>Subtotal</span><span>$${subtotal.toLocaleString()}</span></div>`+`<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:8px;"><span>IVA (16%)</span><span>$${Math.round(iva).toLocaleString()}</span></div>`+`<div style="display:flex;justify-content:space-between;font-size:17px;font-weight:700;"><span>Total</span><span style="color:var(--orange);">$${Math.round(total).toLocaleString()}</span></div>`;
 }
 
-// Genera el PDF bonito y lo devuelve como base64
-async function generarPDFBase64(clienteArg, proyectoArg, notasArg, fechaArg) {
-  return new Promise(async (resolve) => {
-    try {
-      // Esperar a que jsPDF esté disponible
-      let attempts = 0;
-      while (!window.jspdf && attempts < 20) {
-        await new Promise(r => setTimeout(r, 200));
-        attempts++;
-      }
-      if (!window.jspdf) { resolve(''); return; }
-      // Usar generarPDF pero capturar el output en lugar de descargar
-      // Guardar el output method original y reemplazarlo temporalmente
-      const origSave = window._pdfSaveOverride;
-      let capturedBase64 = '';
-      window._pdfSaveOverride = (pdf) => {
-        capturedBase64 = pdf.output('datauristring');
-      };
-      await generarPDF(clienteArg, proyectoArg, notasArg, fechaArg, true);
-      window._pdfSaveOverride = origSave;
-      resolve(capturedBase64 || '');
-    } catch(e) {
-      console.warn('generarPDFBase64 error:', e);
-      resolve('');
-    }
-  });
+function buildCotizPayload() {
+  const cliente = document.getElementById('cq-cliente')?.value.trim()||'';
+  const proyecto = document.getElementById('cq-proyecto')?.value.trim()||'';
+  const fecha = document.getElementById('cq-fecha')?.value||'';
+  const notas = document.getElementById('cq-notas')?.value||'';
+  let serviciosIds = [], subtotal = 0;
+  if (cotizSeleccion.tipo==='paquete' && cotizSeleccion.paqueteId) {
+    const pkg = PAQUETES.find(p=>p.id===cotizSeleccion.paqueteId);
+    if (pkg) { serviciosIds=pkg.servicios; subtotal=pkg.precio_paquete; }
+  } else {
+    document.querySelectorAll('#cotiz-individuales input[type=checkbox]:checked').forEach(cb=>{ const s=SERVICIOS_CATALOG.find(x=>x.id===cb.value); if(s){serviciosIds.push(s.id);subtotal+=s.precio_unit;} });
+  }
+  const iva=Math.round(subtotal*IVA), total=subtotal+iva;
+  return { cliente_nombre:cliente, proyecto_nombre:proyecto, tipo:cotizSeleccion.tipo, paquete_id:cotizSeleccion.paqueteId||null, servicios_ids:serviciosIds, subtotal, iva, total, notas, fecha_entrega:fecha, creado_por: currentUser?.nombre||currentUser?.email||'equipo' };
 }
+
+async function enviarCotizacionCliente() {
+  const cliente = document.getElementById('cq-cliente')?.value.trim();
+  const proyecto = document.getElementById('cq-proyecto')?.value.trim();
+  const correo = document.getElementById('cq-correo')?.value.trim();
+  if (!cliente || !proyecto) { notify('Ingresa nombre del cliente y proyecto.', 'error'); return; }
+  if (!correo) { notify('Ingresa el correo del cliente para enviar.', 'error'); return; }
+
+  const ok = await saveCotizacionToSupabase();
+  if (!ok) return;
+
+  let serviciosDetalle = [], subtotal = 0, paqueteNombre = '';
+  if (cotizSeleccion.tipo==='paquete' && cotizSeleccion.paqueteId) {
+    const pkg = PAQUETES.find(p=>p.id===cotizSeleccion.paqueteId);
+    if (pkg) { paqueteNombre=pkg.nombre; subtotal=pkg.precio_paquete; pkg.servicios.forEach(sid=>{ const s=SERVICIOS_CATALOG.find(x=>x.id===sid); if(s) serviciosDetalle.push(s); }); }
+  } else {
+    document.querySelectorAll('#cotiz-individuales input[type=checkbox]:checked').forEach(cb=>{ const s=SERVICIOS_CATALOG.find(x=>x.id===cb.value); if(s){serviciosDetalle.push(s);subtotal+=s.precio_unit;} });
+  }
+  const iva=Math.round(subtotal*IVA), total=subtotal+iva;
+  const fecha = document.getElementById('cq-fecha')?.value||'';
+  const notas = document.getElementById('cq-notas')?.value||'';
+  const fechaStr = fecha ? new Date(fecha+'T00:00:00').toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'}) : '';
+  const MTN_BG = 'https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0e7aa0cfb6c29eb251dd45_mathias-reding--6uN87kZrdE-unsplash.jpg';
+
+  const emailHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>'
+    + '<body style="margin:0;padding:0;font-family:Arial,sans-serif;">'
+    + '<table width="100%" cellpadding="0" cellspacing="0" style="background-image:url(' + "'"+MTN_BG+"'" + ');background-size:cover;background-position:center;background-color:#0f0f0f;min-height:100%;">'
+    + '<tr><td align="center" style="padding:40px 20px;">'
+    + '<div style="max-width:500px;width:100%;background:rgba(10,10,10,0.82);border:1px solid rgba(255,255,255,0.11);border-radius:24px;overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,0.10),0 32px 80px rgba(0,0,0,0.7);">'
+    + '<div style="padding:32px 36px 24px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.07);">'
+    + '<img src="https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0417eda0998bb179d2f25c_Logo-pagina.png" style="width:40px;height:40px;object-fit:contain;display:block;margin:0 auto 10px;">'
+    + '<div style="font-size:10px;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;color:rgba(255,255,255,0.3);">NOMAND STUDIO</div></div>'
+    + '<div style="padding:32px 36px;text-align:center;">'
+    + '<div style="display:inline-block;font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#F39200;background:rgba(243,146,0,0.10);border:1px solid rgba(243,146,0,0.22);border-radius:100px;padding:5px 14px;margin-bottom:24px;">Tu cotizacion esta lista</div>'
+    + '<h1 style="font-size:26px;font-weight:700;color:#ffffff;margin:0 0 12px;text-shadow:0 2px 12px rgba(0,0,0,0.5);">Hola, ' + cliente.split(' ')[0] + '</h1>'
+    + '<p style="font-size:14px;color:rgba(255,255,255,0.5);margin:0 0 6px;">Preparamos la cotizacion para</p>'
+    + '<p style="font-size:17px;font-weight:700;color:rgba(255,255,255,0.85);margin:0 0 32px;">' + proyecto + '</p>'
+    + (fechaStr ? '<div style="font-size:12px;color:rgba(255,255,255,0.3);margin-bottom:24px;">Entrega estimada: <span style="color:rgba(255,255,255,0.6);">' + fechaStr + '</span></div>' : '')
+    + '<a href="PDF_URL_PLACEHOLDER" style="display:inline-block;background:#F39200;color:#0f0f0f;padding:16px 44px;border-radius:100px;font-size:15px;font-weight:700;text-decoration:none;box-shadow:0 8px 24px rgba(243,146,0,0.4);">Ver mi cotizacion</a>'
+    + '</div>'
+    + '<div style="padding:24px 36px;border-top:1px solid rgba(255,255,255,0.08);">'
+    + '<div style="font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.2);margin-bottom:14px;">Que sigue</div>'
+    + '<div style="display:flex;gap:10px;margin-bottom:10px;"><span style="color:#F39200;font-size:12px;font-weight:700;min-width:20px;">01</span><span style="font-size:12px;color:rgba(255,255,255,0.45);">Revisa tu cotizacion y confirma si todo esta correcto</span></div>'
+    + '<div style="display:flex;gap:10px;margin-bottom:10px;"><span style="color:#F39200;font-size:12px;font-weight:700;min-width:20px;">02</span><span style="font-size:12px;color:rgba(255,255,255,0.45);">Escribenos para resolver cualquier duda</span></div>'
+    + '<div style="display:flex;gap:10px;"><span style="color:#F39200;font-size:12px;font-weight:700;min-width:20px;">03</span><span style="font-size:12px;color:rgba(255,255,255,0.45);">Al aprobar, iniciamos con el 50% de anticipo</span></div>'
+    + '</div>'
+    + '<div style="padding:18px 36px;text-align:center;border-top:1px solid rgba(255,255,255,0.06);">'
+    + '<p style="font-size:11px;color:rgba(255,255,255,0.18);line-height:1.7;margin:0 0 10px;">Esta cotizacion tiene validez de 15 dias.</p>'
+    + '<a href="mailto:nomand.studio@gmail.com" style="color:#F39200;font-size:11px;text-decoration:none;">nomand.studio@gmail.com</a>'
+    + '<span style="color:rgba(255,255,255,0.12);margin:0 6px;">·</span>'
+    + '<a href="https://wa.me/5215578750062" style="color:rgba(255,255,255,0.25);font-size:11px;text-decoration:none;">55 7875 0062</a>'
+    + '</div>'
+    + '</div></td></tr></table></body></html>';
+
+  const nombrePDF = 'Cotizacion_' + proyecto.replace(/[^a-zA-Z0-9]/g,'_') + '_Nomand.pdf';
+  let pdfBase64 = '';
+  try { pdfBase64 = await new Promise(r => { window._pdfCapture = r; guardarYDescargarPDF(true); }); } catch(e) {}
+
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzsDxjjoEob5YSPjt6Eav9DKhrH2Az4WdYFsN6u1GWPnnDULOfOBK0SjXcL_Zso4xu8/exec';
+  notify('Enviando cotizacion...');
+  try {
+    await fetch(SCRIPT_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'enviarCotizacion', to: correo, subject: 'Tu cotizacion Nomand Studio - ' + proyecto, html: emailHtml, pdfBase64, nombrePDF })
+    });
+    notify('Cotizacion enviada a ' + correo);
+    loadCotizacionesGuardadas();
+    switchCotizTab('guardadas');
+  } catch(e) { notify('Error al enviar.', 'error'); }
+}
+
 
 async function soloGuardarCotizacion() {
   const ok = await saveCotizacionToSupabase();
@@ -1469,6 +1520,15 @@ async function guardarYDescargarPDF() {
 }
 
 async function saveCotizacionToSupabase() {
+  // Guardar en Drive via Apps Script
+  try {
+    const payload_drive = buildCotizPayload();
+    fetch('https://script.google.com/macros/s/AKfycbzsDxjjoEob5YSPjt6Eav9DKhrH2Az4WdYFsN6u1GWPnnDULOfOBK0SjXcL_Zso4xu8/exec', {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'guardarCotizacion', data: payload_drive })
+    }).catch(()=>{});
+  } catch(e) { console.warn('Drive:', e); }
   const cliente = document.getElementById('cq-cliente')?.value.trim();
   const proyecto = document.getElementById('cq-proyecto')?.value.trim();
   if (!cliente || !proyecto) { notify('Ingresa el nombre del cliente y del proyecto.'); return false; }
@@ -1483,20 +1543,7 @@ async function saveCotizacionToSupabase() {
     document.querySelectorAll('#cotiz-individuales input[type=checkbox]:checked').forEach(cb=>{ const s=SERVICIOS_CATALOG.find(x=>x.id===cb.value); if(s){serviciosIds.push(s.id);subtotal+=s.precio_unit;} });
   }
   const iva=Math.round(subtotal*IVA), total=subtotal+iva;
-  const payload = { cliente_nombre:cliente, proyecto_nombre:proyecto, tipo:cotizSeleccion.tipo, paquete_id:cotizSeleccion.paqueteId||null, servicios_ids:serviciosIds, subtotal, iva, total, notas, fecha_entrega:fecha, creado_por: currentUser?.nombre||currentUser?.email||'equipo' };
-
-  // Guardar en Supabase (metadatos) + Drive (PDF) via Apps Script
-  try {
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzsDxjjoEob5YSPjt6Eav9DKhrH2Az4WdYFsN6u1GWPnnDULOfOBK0SjXcL_Zso4xu8/exec';
-    fetch(SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'guardarCotizacion', data: payload })
-    }).catch(e => console.warn('Drive save:', e));
-  } catch(e) { console.warn('Drive save:', e); }
-
-  // También en Supabase para listar en el panel
+  const payload = { cliente_nombre:cliente, proyecto_nombre:proyecto, tipo:cotizSeleccion.tipo, paquete_id:cotizSeleccion.paqueteId||null, servicios_ids:serviciosIds, subtotal, iva, total, notas, fecha_entrega:fecha, creado_por: currentUser?.email||'equipo' };
   let res;
   if (cotizEditId) {
     res = await api('/rest/v1/cotizaciones?id=eq.'+cotizEditId, { method:'PATCH', body:JSON.stringify(payload) });
@@ -1504,231 +1551,7 @@ async function saveCotizacionToSupabase() {
   } else {
     res = await api('/rest/v1/cotizaciones', { method:'POST', body:JSON.stringify(payload) });
   }
-  return true;
-}
-
-// ── ENVIAR COTIZACIÓN AL CLIENTE ──
-async function enviarCotizacionCliente() {
-  const cliente = document.getElementById('cq-cliente')?.value.trim();
-  const proyecto = document.getElementById('cq-proyecto')?.value.trim();
-  const correo = document.getElementById('cq-correo')?.value.trim();
-  if (!cliente || !proyecto) { notify('Ingresa nombre del cliente y proyecto.', 'error'); return; }
-  if (!correo) { notify('Ingresa el correo del cliente para enviar.', 'error'); return; }
-
-  const ok = await saveCotizacionToSupabase();
-  if (!ok) return;
-
-  // Construir HTML del resumen para el correo
-  let serviciosDetalle = [], subtotal = 0, paqueteNombre = '';
-  if (cotizSeleccion.tipo==='paquete' && cotizSeleccion.paqueteId) {
-    const pkg = PAQUETES.find(p=>p.id===cotizSeleccion.paqueteId);
-    if (pkg) { paqueteNombre=pkg.nombre; subtotal=pkg.precio_paquete; pkg.servicios.forEach(sid=>{ const s=SERVICIOS_CATALOG.find(x=>x.id===sid); if(s) serviciosDetalle.push(s); }); }
-  } else {
-    document.querySelectorAll('#cotiz-individuales input[type=checkbox]:checked').forEach(cb=>{ const s=SERVICIOS_CATALOG.find(x=>x.id===cb.value); if(s){serviciosDetalle.push(s);subtotal+=s.precio_unit;} });
-  }
-  const iva=Math.round(subtotal*IVA), total=subtotal+iva;
-  const fecha = document.getElementById('cq-fecha')?.value||'';
-  const notas = document.getElementById('cq-notas')?.value||'';
-  const fechaStr = fecha ? new Date(fecha+'T00:00:00').toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'}) : '';
-
-  const serviciosHtml = serviciosDetalle.map(s =>
-    `<tr><td style="padding:8px 12px;border-bottom:1px solid #f0ede8;font-size:13px;color:#1c1c1e;">${s.nombre}</td><td style="padding:8px 12px;border-bottom:1px solid #f0ede8;text-align:right;font-size:13px;${cotizSeleccion.tipo==='paquete'?'color:#F39200;':'color:#1c1c1e;font-weight:700;'}">${cotizSeleccion.tipo==='paquete'?'Incluido':'$'+s.precio_unit.toLocaleString()}</td></tr>`
-  ).join('');
-
-  // Generar PDF bonito y convertir a base64 para mandarlo a Drive
-  let pdfBase64 = '';
-  try {
-    pdfBase64 = await generarPDFBase64(cliente, proyecto, notas, fecha);
-  } catch(e) { console.warn('PDF base64 error:', e); }
-
-  const nombrePDF = 'Cotizacion_' + proyecto.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]/g,'_') + '_Nomand.pdf';
-
-  // Correo elegante — fondo montañas, liquid glass, sin emojis en asunto
-  const MTN_BG = 'https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0e7aa0cfb6c29eb251dd45_mathias-reding--6uN87kZrdE-unsplash.jpg';
-
-  const emailHtml = `<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#0f0f0f;">
-
-  <div style="max-width:520px;margin:0 auto;padding:32px 16px;">
-    <!-- Card con fondo montañas solo en el header -->
-    <div style="
-      border-radius:24px;
-      overflow:hidden;
-      border:1px solid rgba(255,255,255,0.10);
-      box-shadow:0 24px 60px rgba(0,0,0,0.5);
-    ">
-    <!-- Card interior -->
-    <div style="background:#111111;">
-
-      <!-- Header con foto montañas -->
-      <div style="
-        background-image:url('${MTN_BG}');
-        background-size:cover;
-        background-position:center 30%;
-        padding:36px 40px 28px;
-        text-align:center;
-        position:relative;
-      ">
-        <div style="position:absolute;inset:0;background:rgba(0,0,0,0.55);"></div>
-        <div style="position:relative;z-index:1;">
-          <img src="https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0417eda0998bb179d2f25c_Logo-pagina.png"
-               style="width:44px;height:44px;object-fit:contain;display:block;margin:0 auto 12px;">
-          <div style="font-size:10px;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;color:rgba(255,255,255,0.4);">NOMAND STUDIO</div>
-        </div>
-      </div>
-
-      <!-- Body -->
-      <div style="padding:32px 36px;text-align:center;background:#111111;">
-
-        <!-- Eyebrow -->
-        <div style="
-          display:inline-block;
-          font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;
-          color:#F39200;
-          background:rgba(243,146,0,0.10);
-          border:1px solid rgba(243,146,0,0.22);
-          border-radius:100px;
-          padding:5px 14px;
-          margin-bottom:24px;
-        ">Tu cotizacion esta lista</div>
-
-        <!-- Titulo -->
-        <h1 style="font-size:26px;font-weight:700;color:#ffffff;margin:0 0 12px;line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.5);">
-          Hola, ${cliente.split(' ')[0]}
-        </h1>
-
-        <p style="font-size:14px;color:rgba(255,255,255,0.5);margin:0 0 6px;line-height:1.6;">
-          Preparamos la cotizacion para
-        </p>
-        <p style="font-size:17px;font-weight:700;color:rgba(255,255,255,0.85);margin:0 0 36px;">
-          ${proyecto}
-        </p>
-
-        ${fechaStr ? `<div style="font-size:12px;color:rgba(255,255,255,0.3);margin-bottom:28px;">Entrega estimada: <span style="color:rgba(255,255,255,0.6);">${fechaStr}</span></div>` : ''}
-
-        <!-- CTA Principal -->
-        <a href="PDF_URL_PLACEHOLDER"
-           style="
-             display:inline-block;
-             background:#F39200;
-             color:#0f0f0f;
-             padding:16px 44px;
-             border-radius:100px;
-             font-size:15px;
-             font-weight:700;
-             text-decoration:none;
-             letter-spacing:0.3px;
-             box-shadow:0 8px 24px rgba(243,146,0,0.4);
-           ">
-          Ver mi cotizacion
-        </a>
-
-      </div>
-
-      <!-- Que sigue -->
-      <div style="padding:24px 36px;border-top:1px solid rgba(255,255,255,0.08);background:#0d0d0d;">
-        <div style="font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.2);margin-bottom:16px;">Que sigue</div>
-        <div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;">
-          <span style="color:#F39200;font-size:12px;font-weight:700;min-width:20px;">01</span>
-          <span style="font-size:12px;color:rgba(255,255,255,0.45);line-height:1.5;">Revisa tu cotizacion y confirma si todo esta correcto</span>
-        </div>
-        <div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;">
-          <span style="color:#F39200;font-size:12px;font-weight:700;min-width:20px;">02</span>
-          <span style="font-size:12px;color:rgba(255,255,255,0.45);line-height:1.5;">Escribenos para resolver cualquier duda</span>
-        </div>
-        <div style="display:flex;gap:10px;align-items:flex-start;">
-          <span style="color:#F39200;font-size:12px;font-weight:700;min-width:20px;">03</span>
-          <span style="font-size:12px;color:rgba(255,255,255,0.45);line-height:1.5;">Al aprobar, iniciamos con el 50% de anticipo</span>
-        </div>
-      </div>
-
-      <!-- Footer -->
-      <div style="padding:18px 36px;text-align:center;border-top:1px solid rgba(255,255,255,0.06);background:#0a0a0a;">
-        <p style="font-size:11px;color:rgba(255,255,255,0.18);line-height:1.7;margin:0 0 10px;">
-          Esta cotizacion tiene validez de 15 dias.
-        </p>
-        <a href="mailto:nomand.studio@gmail.com" style="color:#F39200;font-size:11px;text-decoration:none;">nomand.studio@gmail.com</a>
-        <span style="color:rgba(255,255,255,0.12);margin:0 6px;">·</span>
-        <a href="https://wa.me/5215578750062" style="color:rgba(255,255,255,0.25);font-size:11px;text-decoration:none;">55 7875 0062</a>
-      </div>
-
-    </div><!-- cierre card interior -->
-    </div><!-- cierre card con borde -->
-  </div><!-- cierre wrapper -->
-
-</body>
-</html>`;
-
-// MODAL CREAR CLIENTE DESDE COTIZACIÓN —
-<div id="modalCrearDesdeCotiz" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;">
-  <div onclick="document.getElementById('modalCrearDesdeCotiz').style.display='none'" style="position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(12px);"></div>
-  <div style="position:relative;z-index:1;width:100%;max-width:480px;margin:20px;background:rgba(15,15,15,0.85);border:1px solid rgba(255,255,255,0.12);border-radius:24px;padding:36px 32px;backdrop-filter:blur(32px);box-shadow:0 24px 64px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.08);">
-    <div style="display:inline-flex;align-items:center;padding:4px 12px;background:rgba(48,209,88,0.1);border:1px solid rgba(48,209,88,0.25);border-radius:100px;font-size:10px;font-weight:700;color:#30d158;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:16px;font-family:'century-gothic',sans-serif;">✅ Cotización aprobada</div>
-    <h2 style="font-size:20px;font-weight:700;color:#fff;margin:0 0 6px;font-family:'century-gothic',sans-serif;">Crear cliente</h2>
-    <p style="font-size:13px;color:rgba(255,255,255,0.4);margin:0 0 24px;font-family:'century-gothic',sans-serif;">Los datos se tomaron de la cotización. Completa la información faltante.</p>
-    <div style="display:flex;flex-direction:column;gap:12px;">
-      <div>
-        <label style="display:block;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px;font-family:'century-gothic',sans-serif;">Nombre del cliente</label>
-        <input type="text" id="cdc-nombre" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-family:'century-gothic',sans-serif;font-size:13px;color:white;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(243,146,0,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
-      </div>
-      <div>
-        <label style="display:block;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px;font-family:'century-gothic',sans-serif;">Empresa / Nombre del proyecto</label>
-        <input type="text" id="cdc-empresa" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-family:'century-gothic',sans-serif;font-size:13px;color:white;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(243,146,0,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
-      </div>
-      <div>
-        <label style="display:block;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px;font-family:'century-gothic',sans-serif;">Correo del cliente</label>
-        <input type="email" id="cdc-correo" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-family:'century-gothic',sans-serif;font-size:13px;color:white;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(243,146,0,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
-      </div>
-      <div>
-        <label style="display:block;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px;font-family:'century-gothic',sans-serif;">Teléfono</label>
-        <input type="tel" id="cdc-telefono" placeholder="+52 55 0000 0000" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-family:'century-gothic',sans-serif;font-size:13px;color:white;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(243,146,0,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
-      </div>
-      <div>
-        <label style="display:block;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px;font-family:'century-gothic',sans-serif;">Nueva fecha de entrega</label>
-        <input type="date" id="cdc-fecha" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-family:'century-gothic',sans-serif;font-size:13px;color:white;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(243,146,0,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
-      </div>
-      <div>
-        <label style="display:block;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px;font-family:'century-gothic',sans-serif;">Anticipo recibido (MXN)</label>
-        <input type="number" id="cdc-anticipo" placeholder="0" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-family:'century-gothic',sans-serif;font-size:13px;color:white;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(243,146,0,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
-      </div>
-    </div>
-    <div id="cdc-status" style="font-size:12px;color:rgba(243,146,0,0.8);text-align:center;margin:14px 0 0;font-family:'century-gothic',sans-serif;display:none;"></div>
-    <div style="display:flex;gap:10px;margin-top:20px;">
-      <button onclick="document.getElementById('modalCrearDesdeCotiz').style.display='none'" style="flex:1;padding:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:100px;font-family:'century-gothic',sans-serif;font-size:13px;color:rgba(255,255,255,0.5);cursor:pointer;">Cancelar</button>
-      <button id="cdc-btn" onclick="confirmarCrearClienteDesdeCotiz()" style="flex:2;padding:12px;background:#F39200;border:none;border-radius:100px;font-family:'century-gothic',sans-serif;font-size:13px;font-weight:700;color:#0f0f0f;cursor:pointer;">Crear cliente y enviar acceso</button>
-    </div>
-  </div>
-</div>
-</body>
-</html>`;
-
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzsDxjjoEob5YSPjt6Eav9DKhrH2Az4WdYFsN6u1GWPnnDULOfOBK0SjXcL_Zso4xu8/exec';
-  notify('📧 Preparando y enviando cotización...');
-  try {
-    await fetch(SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'enviarCotizacion',
-        to: correo,
-        subject: 'Tu cotizacion Nomand Studio - ' + proyecto,
-        html: emailHtml,
-        clienteNombre: cliente,
-        proyectoNombre: proyecto,
-        pdfBase64: pdfBase64,
-        nombrePDF: nombrePDF
-      })
-    }).catch(e => console.warn('fetch error:', e));
-    notify('Cotizacion enviada a ' + correo);
-    loadCotizacionesGuardadas();
-    switchCotizTab('guardadas');
-  } catch(e) {
-    notify('Error al enviar. Verifica el correo.', 'error');
-    console.error(e);
-  }
+  return res.ok || res.status === 201 || res.status === 204;
 }
 
 async function editarCotizacion(id) {
@@ -1782,25 +1605,16 @@ async function generarPDF(clienteArg, proyectoArg, notasArg, fechaArg) {
   const fechaStr = fecha ? new Date(fecha+'T00:00:00').toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'}) : '';
   const hoy = new Date().toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'});
   var LOGO = 'https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0417eda0998bb179d2f25c_Logo-pagina.png';
-  // Convertir imagen de montañas a base64 usando canvas nativo (sin proxy, sin CORS)
   var MTN = await new Promise(function(resolve) {
     var img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = function() {
       var c = document.createElement('canvas');
-      c.width = img.naturalWidth || 1920;
-      c.height = img.naturalHeight || 1280;
-      var ctx = c.getContext('2d');
-      ctx.drawImage(img, 0, 0);
-      try { resolve(c.toDataURL('image/jpeg', 0.85)); }
-      catch(e) {
-        // Si aún falla por CORS, usar color sólido oscuro como fallback
-        resolve('data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==');
-      }
+      c.width = img.naturalWidth || 1920; c.height = img.naturalHeight || 1280;
+      var ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0);
+      try { resolve(c.toDataURL('image/jpeg', 0.85)); } catch(e) { resolve(''); }
     };
-    img.onerror = function() {
-      resolve('data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==');
-    };
+    img.onerror = function() { resolve(''); };
     img.src = 'https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0e7aa0cfb6c29eb251dd45_mathias-reding--6uN87kZrdE-unsplash.jpg';
   });
   var serviciosDetalle = [], subtotal = 0, paqueteNombre = '', paqueteDesc = '';
@@ -1894,13 +1708,9 @@ async function generarPDF(clienteArg, proyectoArg, notasArg, fechaArg) {
       function captureNext() {
         if (idx >= pageArr.length) {
           var nombrePDF = 'Cotizacion_' + proyecto.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]/g,'').replace(/\s+/g,'_') + '_Nomand.pdf';
-          if (window._pdfSaveOverride) {
-            window._pdfSaveOverride(pdf);
-          } else {
-            pdf.save(nombrePDF);
-            notify('✅ PDF descargado: ' + nombrePDF);
-          }
+          pdf.save(nombrePDF);
           document.body.removeChild(div);
+          notify('✅ PDF descargado: Cotizacion_'+proyecto+'');
           return;
         }
         html2canvas(pageArr[idx], { scale:1.5, useCORS:true, allowTaint:true, backgroundColor:null }).then(function(canvas) {
@@ -2037,24 +1847,15 @@ function fIco(n){
 // ── INIT ──
 document.addEventListener('DOMContentLoaded', async () => {
   const s = gs();
-  // SSO: aceptar token pasado desde Nomand sin pedir login de nuevo
   const urlParams = new URLSearchParams(window.location.search);
   const ssoToken = urlParams.get('sso');
   if (ssoToken) {
     try {
-      const r = await fetch(SB + '/auth/v1/user', {
-        headers: { 'apikey': KEY, 'Authorization': 'Bearer ' + ssoToken }
-      });
+      const r = await fetch(SB + '/auth/v1/user', { headers: { 'apikey': KEY, 'Authorization': 'Bearer ' + ssoToken } });
       const u = await r.json();
-      if (u.id) {
-        ss({ access_token: ssoToken, user: u, remember: false });
-        window.history.replaceState({}, '', window.location.pathname);
-        initApp(u);
-      }
+      if (u.id) { ss({ access_token: ssoToken, user: u, remember: false }); window.history.replaceState({}, '', window.location.pathname); initApp(u); }
     } catch(e) { console.warn('SSO error:', e); }
-  } else if (s.access_token && s.user) {
-    initApp(s.user);
-  }
+  } else if (s.access_token && s.user) { initApp(s.user); }
   document.getElementById('lpass').addEventListener('keypress', e => { if(e.key==='Enter') doLogin(); });
 });
 </script>
@@ -2063,34 +1864,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 <div id="modalCrearDesdeCotiz" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;">
   <div onclick="document.getElementById('modalCrearDesdeCotiz').style.display='none'" style="position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(12px);"></div>
   <div style="position:relative;z-index:1;width:100%;max-width:480px;margin:20px;background:rgba(15,15,15,0.85);border:1px solid rgba(255,255,255,0.12);border-radius:24px;padding:36px 32px;backdrop-filter:blur(32px);box-shadow:0 24px 64px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.08);">
-    <div style="display:inline-flex;align-items:center;padding:4px 12px;background:rgba(48,209,88,0.1);border:1px solid rgba(48,209,88,0.25);border-radius:100px;font-size:10px;font-weight:700;color:#30d158;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:16px;font-family:'century-gothic',sans-serif;">✅ Cotización aprobada</div>
+    <div style="display:inline-flex;align-items:center;padding:4px 12px;background:rgba(48,209,88,0.1);border:1px solid rgba(48,209,88,0.25);border-radius:100px;font-size:10px;font-weight:700;color:#30d158;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:16px;font-family:'century-gothic',sans-serif;">Cotizacion aprobada</div>
     <h2 style="font-size:20px;font-weight:700;color:#fff;margin:0 0 6px;font-family:'century-gothic',sans-serif;">Crear cliente</h2>
-    <p style="font-size:13px;color:rgba(255,255,255,0.4);margin:0 0 24px;font-family:'century-gothic',sans-serif;">Los datos se tomaron de la cotización. Completa la información faltante.</p>
+    <p style="font-size:13px;color:rgba(255,255,255,0.4);margin:0 0 24px;font-family:'century-gothic',sans-serif;">Los datos se tomaron de la cotizacion. Completa la informacion faltante.</p>
     <div style="display:flex;flex-direction:column;gap:12px;">
-      <div>
-        <label style="display:block;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px;font-family:'century-gothic',sans-serif;">Nombre del cliente</label>
-        <input type="text" id="cdc-nombre" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-family:'century-gothic',sans-serif;font-size:13px;color:white;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(243,146,0,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
-      </div>
-      <div>
-        <label style="display:block;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px;font-family:'century-gothic',sans-serif;">Empresa / Nombre del proyecto</label>
-        <input type="text" id="cdc-empresa" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-family:'century-gothic',sans-serif;font-size:13px;color:white;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(243,146,0,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
-      </div>
-      <div>
-        <label style="display:block;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px;font-family:'century-gothic',sans-serif;">Correo del cliente</label>
-        <input type="email" id="cdc-correo" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-family:'century-gothic',sans-serif;font-size:13px;color:white;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(243,146,0,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
-      </div>
-      <div>
-        <label style="display:block;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px;font-family:'century-gothic',sans-serif;">Teléfono</label>
-        <input type="tel" id="cdc-telefono" placeholder="+52 55 0000 0000" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-family:'century-gothic',sans-serif;font-size:13px;color:white;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(243,146,0,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
-      </div>
-      <div>
-        <label style="display:block;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px;font-family:'century-gothic',sans-serif;">Nueva fecha de entrega</label>
-        <input type="date" id="cdc-fecha" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-family:'century-gothic',sans-serif;font-size:13px;color:white;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(243,146,0,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
-      </div>
-      <div>
-        <label style="display:block;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px;font-family:'century-gothic',sans-serif;">Anticipo recibido (MXN)</label>
-        <input type="number" id="cdc-anticipo" placeholder="0" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-family:'century-gothic',sans-serif;font-size:13px;color:white;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(243,146,0,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
-      </div>
+      <div><label style="display:block;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px;font-family:'century-gothic',sans-serif;">Nombre del cliente</label><input type="text" id="cdc-nombre" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-family:'century-gothic',sans-serif;font-size:13px;color:white;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(243,146,0,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"></div>
+      <div><label style="display:block;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px;font-family:'century-gothic',sans-serif;">Empresa / Proyecto</label><input type="text" id="cdc-empresa" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-family:'century-gothic',sans-serif;font-size:13px;color:white;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(243,146,0,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"></div>
+      <div><label style="display:block;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px;font-family:'century-gothic',sans-serif;">Correo del cliente</label><input type="email" id="cdc-correo" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-family:'century-gothic',sans-serif;font-size:13px;color:white;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(243,146,0,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"></div>
+      <div><label style="display:block;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px;font-family:'century-gothic',sans-serif;">Telefono</label><input type="tel" id="cdc-telefono" placeholder="+52 55 0000 0000" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-family:'century-gothic',sans-serif;font-size:13px;color:white;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(243,146,0,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"></div>
+      <div><label style="display:block;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px;font-family:'century-gothic',sans-serif;">Nueva fecha de entrega</label><input type="date" id="cdc-fecha" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-family:'century-gothic',sans-serif;font-size:13px;color:white;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(243,146,0,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"></div>
+      <div><label style="display:block;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px;font-family:'century-gothic',sans-serif;">Anticipo recibido (MXN)</label><input type="number" id="cdc-anticipo" placeholder="0" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-family:'century-gothic',sans-serif;font-size:13px;color:white;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(243,146,0,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"></div>
     </div>
     <div id="cdc-status" style="font-size:12px;color:rgba(243,146,0,0.8);text-align:center;margin:14px 0 0;font-family:'century-gothic',sans-serif;display:none;"></div>
     <div style="display:flex;gap:10px;margin-top:20px;">
@@ -2099,5 +1882,55 @@ document.addEventListener('DOMContentLoaded', async () => {
     </div>
   </div>
 </div>
+<script>
+var _cdcCotizData = null;
+async function crearClienteDesdeCotiz(id) {
+  const data = await api('/rest/v1/cotizaciones?id=eq.'+id+'&select=*');
+  if (!Array.isArray(data) || !data.length) return;
+  const c = data[0]; _cdcCotizData = c;
+  document.getElementById('cdc-nombre').value  = c.cliente_nombre || '';
+  document.getElementById('cdc-empresa').value = c.proyecto_nombre || '';
+  document.getElementById('cdc-correo').value  = '';
+  document.getElementById('cdc-telefono').value = '';
+  document.getElementById('cdc-fecha').value   = c.fecha_entrega || '';
+  document.getElementById('cdc-anticipo').value = '';
+  document.getElementById('cdc-status').style.display = 'none';
+  document.getElementById('cdc-btn').textContent = 'Crear cliente y enviar acceso';
+  document.getElementById('cdc-btn').disabled = false;
+  document.getElementById('modalCrearDesdeCotiz').style.display = 'flex';
+}
+async function confirmarCrearClienteDesdeCotiz() {
+  const nombre   = document.getElementById('cdc-nombre').value.trim();
+  const empresa  = document.getElementById('cdc-empresa').value.trim();
+  const correo   = document.getElementById('cdc-correo').value.trim();
+  const telefono = document.getElementById('cdc-telefono').value.trim();
+  const fecha    = document.getElementById('cdc-fecha').value;
+  const anticipo = parseFloat(document.getElementById('cdc-anticipo').value) || 0;
+  if (!nombre || !empresa || !correo) { notify('Nombre, empresa y correo son requeridos.', 'error'); return; }
+  const btn = document.getElementById('cdc-btn');
+  const status = document.getElementById('cdc-status');
+  btn.disabled = true; btn.textContent = 'Creando...';
+  status.style.display = 'block'; status.textContent = 'Creando acceso del cliente...';
+  try {
+    const SVC = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvd2R1dHp5cnNmbmNud2VqcGJ0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTEyMzY4MywiZXhwIjoyMDk0Njk5NjgzfQ.RQqdd0AqeJBVt3gRDMiZN-20ND1MvJSYbt83nUiH7IQ';
+    const invRes = await fetch(SB + '/auth/v1/admin/invite', { method:'POST', headers:{'apikey':SVC,'Authorization':'Bearer '+SVC,'Content-Type':'application/json'}, body:JSON.stringify({email:correo,data:{nombre},app_metadata:{rol:'cliente'}}) });
+    const invData = await invRes.json();
+    if (!invData.id && !invData.email) throw new Error('No se pudo crear usuario');
+    status.textContent = 'Guardando en base de datos...';
+    await api('/rest/v1/clientes', { method:'POST', body:JSON.stringify({nombre,empresa,correo,telefono,estado:'Activo',carpeta_creada:false}) });
+    const total = _cdcCotizData?.total || 0;
+    await api('/rest/v1/proyectos', { method:'POST', body:JSON.stringify({nombre:empresa,paquete:_cdcCotizData?.paquete_id||'custom',estado:'En progreso',total_a_cobrar:total,pagado:anticipo,porcentaje_pagado:total>0?Math.round((anticipo/total)*100):0,fecha_entrega:fecha||null,descripcion:'Creado desde cotizacion aprobada'}) });
+    status.textContent = 'Creando carpetas en Drive...';
+    await fetch('https://script.google.com/macros/s/AKfycbx3V1t3njMEoQ9gmYWUMYh3UeMqVRHZx4xe8l90arAL7uuH_cmiRinFmfX2Q_rii7hT/exec', { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'createClientComplete',clientName:empresa,folders:[],email:correo,nombre,sendWelcome:true}) }).catch(()=>{});
+    notify('Cliente creado y acceso enviado a ' + correo);
+    document.getElementById('modalCrearDesdeCotiz').style.display = 'none';
+    goTo('clientes');
+  } catch(e) {
+    notify('Error: ' + e.message, 'error');
+    btn.disabled = false; btn.textContent = 'Crear cliente y enviar acceso';
+    status.style.display = 'none';
+  }
+}
+</script>
 </body>
 </html>
