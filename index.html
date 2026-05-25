@@ -1434,19 +1434,25 @@ function updateCotizPreview() {
 async function generarPDFBase64(clienteArg, proyectoArg, notasArg, fechaArg) {
   return new Promise(async (resolve) => {
     try {
-      // Reusar la lógica de generarPDF pero devolver base64 en lugar de descargar
-      const { jsPDF } = window.jspdf || await loadJsPDF();
-      const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
-      // Generar contenido simple pero con los datos correctos para Drive
-      pdf.setFontSize(22);
-      pdf.setTextColor(243, 146, 0);
-      pdf.text('Cotización — ' + (proyectoArg||''), 20, 30);
-      pdf.setFontSize(11);
-      pdf.setTextColor(100,100,100);
-      pdf.text('Cliente: ' + (clienteArg||''), 20, 42);
-      pdf.text('Fecha: ' + new Date().toLocaleDateString('es-MX'), 20, 50);
-      resolve(pdf.output('datauristring'));
+      // Esperar a que jsPDF esté disponible
+      let attempts = 0;
+      while (!window.jspdf && attempts < 20) {
+        await new Promise(r => setTimeout(r, 200));
+        attempts++;
+      }
+      if (!window.jspdf) { resolve(''); return; }
+      // Usar generarPDF pero capturar el output en lugar de descargar
+      // Guardar el output method original y reemplazarlo temporalmente
+      const origSave = window._pdfSaveOverride;
+      let capturedBase64 = '';
+      window._pdfSaveOverride = (pdf) => {
+        capturedBase64 = pdf.output('datauristring');
+      };
+      await generarPDF(clienteArg, proyectoArg, notasArg, fechaArg, true);
+      window._pdfSaveOverride = origSave;
+      resolve(capturedBase64 || '');
     } catch(e) {
+      console.warn('generarPDFBase64 error:', e);
       resolve('');
     }
   });
@@ -1543,41 +1549,38 @@ async function enviarCotizacionCliente() {
   const emailHtml = `<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;font-family:Arial,sans-serif;">
+<body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#0f0f0f;">
 
-  <!-- Fondo montañas -->
-  <div style="
-    min-height:100vh;
-    background-image:url('${MTN_BG}');
-    background-size:cover;
-    background-position:center;
-    background-color:#0f0f0f;
-    padding:48px 20px;
-  ">
-    <!-- Overlay oscuro -->
+  <div style="max-width:520px;margin:0 auto;padding:32px 16px;">
+    <!-- Card con fondo montañas solo en el header -->
     <div style="
-      max-width:520px;
-      margin:0 auto;
-      background:rgba(0,0,0,0.45);
-      backdrop-filter:blur(24px);
-      -webkit-backdrop-filter:blur(24px);
-      border:1px solid rgba(255,255,255,0.12);
-      border-radius:28px;
+      border-radius:24px;
       overflow:hidden;
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.18),
-        0 32px 80px rgba(0,0,0,0.6);
+      border:1px solid rgba(255,255,255,0.10);
+      box-shadow:0 24px 60px rgba(0,0,0,0.5);
     ">
+    <!-- Card interior -->
+    <div style="background:#111111;">
 
-      <!-- Header -->
-      <div style="padding:36px 40px 28px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.07);">
-        <img src="https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0417eda0998bb179d2f25c_Logo-pagina.png"
-             style="width:44px;height:44px;object-fit:contain;display:block;margin:0 auto 12px;">
-        <div style="font-size:10px;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;color:rgba(255,255,255,0.3);">NOMAND STUDIO</div>
+      <!-- Header con foto montañas -->
+      <div style="
+        background-image:url('${MTN_BG}');
+        background-size:cover;
+        background-position:center 30%;
+        padding:36px 40px 28px;
+        text-align:center;
+        position:relative;
+      ">
+        <div style="position:absolute;inset:0;background:rgba(0,0,0,0.55);"></div>
+        <div style="position:relative;z-index:1;">
+          <img src="https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0417eda0998bb179d2f25c_Logo-pagina.png"
+               style="width:44px;height:44px;object-fit:contain;display:block;margin:0 auto 12px;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;color:rgba(255,255,255,0.4);">NOMAND STUDIO</div>
+        </div>
       </div>
 
       <!-- Body -->
-      <div style="padding:40px;text-align:center;">
+      <div style="padding:32px 36px;text-align:center;background:#111111;">
 
         <!-- Eyebrow -->
         <div style="
@@ -1625,7 +1628,7 @@ async function enviarCotizacionCliente() {
       </div>
 
       <!-- Que sigue -->
-      <div style="padding:24px 40px;border-top:1px solid rgba(255,255,255,0.06);background:rgba(0,0,0,0.15);">
+      <div style="padding:24px 36px;border-top:1px solid rgba(255,255,255,0.08);background:#0d0d0d;">
         <div style="font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.2);margin-bottom:16px;">Que sigue</div>
         <div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;">
           <span style="color:#F39200;font-size:12px;font-weight:700;min-width:20px;">01</span>
@@ -1642,7 +1645,7 @@ async function enviarCotizacionCliente() {
       </div>
 
       <!-- Footer -->
-      <div style="padding:20px 40px;text-align:center;border-top:1px solid rgba(255,255,255,0.05);">
+      <div style="padding:18px 36px;text-align:center;border-top:1px solid rgba(255,255,255,0.06);background:#0a0a0a;">
         <p style="font-size:11px;color:rgba(255,255,255,0.18);line-height:1.7;margin:0 0 10px;">
           Esta cotizacion tiene validez de 15 dias.
         </p>
@@ -1651,11 +1654,14 @@ async function enviarCotizacionCliente() {
         <a href="https://wa.me/5215578750062" style="color:rgba(255,255,255,0.25);font-size:11px;text-decoration:none;">55 7875 0062</a>
       </div>
 
-    </div>
-  </div>
+    </div><!-- cierre card interior -->
+    </div><!-- cierre card con borde -->
+  </div><!-- cierre wrapper -->
 
+</body>
+</html>`;
 
-<!-- MODAL CREAR CLIENTE DESDE COTIZACIÓN -->
+// MODAL CREAR CLIENTE DESDE COTIZACIÓN —
 <div id="modalCrearDesdeCotiz" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;">
   <div onclick="document.getElementById('modalCrearDesdeCotiz').style.display='none'" style="position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(12px);"></div>
   <div style="position:relative;z-index:1;width:100%;max-width:480px;margin:20px;background:rgba(15,15,15,0.85);border:1px solid rgba(255,255,255,0.12);border-radius:24px;padding:36px 32px;backdrop-filter:blur(32px);box-shadow:0 24px 64px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.08);">
@@ -1888,9 +1894,13 @@ async function generarPDF(clienteArg, proyectoArg, notasArg, fechaArg) {
       function captureNext() {
         if (idx >= pageArr.length) {
           var nombrePDF = 'Cotizacion_' + proyecto.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]/g,'').replace(/\s+/g,'_') + '_Nomand.pdf';
-          pdf.save(nombrePDF);
+          if (window._pdfSaveOverride) {
+            window._pdfSaveOverride(pdf);
+          } else {
+            pdf.save(nombrePDF);
+            notify('✅ PDF descargado: ' + nombrePDF);
+          }
           document.body.removeChild(div);
-          notify('✅ PDF descargado: ' + nombrePDF);
           return;
         }
         html2canvas(pageArr[idx], { scale:1.5, useCORS:true, allowTaint:true, backgroundColor:null }).then(function(canvas) {
