@@ -1370,13 +1370,17 @@ function buildNuevaCotizacion() {
           <div class="card-tag">Resumen</div>
           <div id="cotiz-resumen"><div class="empty"><div class="empty-ico" style="font-size:22px;">📋</div><div class="empty-txt" style="font-size:12px;">Selecciona un paquete o servicios</div></div></div>
         </div>
-        <button class="btn-save" style="width:100%;margin-bottom:8px;" onclick="guardarYDescargarPDF()">⬇️ Guardar y descargar PDF</button>
-        <button class="btn-save" style="width:100%;margin-bottom:8px;background:rgba(10,132,255,0.15);border-color:rgba(10,132,255,0.3);color:#0a84ff;" onclick="enviarCotizacionCliente()">📧 Guardar y enviar al cliente</button>
-        <button class="btn-cancel" style="width:100%;" onclick="soloGuardarCotizacion()">💾 Solo guardar</button>
+        <button class="btn-save" id="btn-guardar-pdf" style="width:100%;margin-bottom:8px;">⬇️ Guardar y descargar PDF</button>
+        <button class="btn-save" id="btn-enviar-cliente" style="width:100%;margin-bottom:8px;background:rgba(10,132,255,0.15);border-color:rgba(10,132,255,0.3);color:#0a84ff;">📧 Guardar y enviar al cliente</button>
+        <button class="btn-cancel" id="btn-solo-guardar" style="width:100%;">💾 Solo guardar</button>
         <p id="cotiz-status" style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px;"></p>
       </div>
     </div>
   `;
+  // Asignar eventos después de que el DOM esté listo
+  document.getElementById('btn-guardar-pdf').addEventListener('click', guardarYDescargarPDF);
+  document.getElementById('btn-enviar-cliente').addEventListener('click', enviarCotizacionCliente);
+  document.getElementById('btn-solo-guardar').addEventListener('click', soloGuardarCotizacion);
   if (cotizEditId) {
     document.getElementById('cotiz-status').textContent = '✏️ Editando cotización existente';
   }
