@@ -1289,9 +1289,8 @@ function switchCotizTab(tab) {
 async function loadCotizacionesGuardadas() {
   const el = document.getElementById('tab-guardadas');
   el.innerHTML = '<div class="spin-wrap"><div class="spinner"></div> Cargando...</div>';
-  const res = await api('/rest/v1/cotizaciones?order=creado_at.desc&select=*');
-  const data = await res.json();
-  if (!data.length) {
+  const data = await api('/rest/v1/cotizaciones?order=creado_at.desc&select=*');
+  if (!Array.isArray(data) || !data.length) {
     el.innerHTML = '<div class="empty"><div class="empty-ico">📋</div><div class="empty-txt">No hay cotizaciones guardadas aún.<br>Crea la primera con el botón de arriba.</div></div>';
     return;
   }
@@ -1638,29 +1637,6 @@ async function enviarCotizacionCliente() {
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzsDxjjoEob5YSPjt6Eav9DKhrH2Az4WdYFsN6u1GWPnnDULOfOBK0SjXcL_Zso4xu8/exec';
   notify('📧 Preparando y enviando cotización...');
   try {
-    // Mandar con fetch normal (no no-cors) para recibir la URL del PDF de Drive
-    const resp = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'enviarCotizacion',
-        to: correo,
-        subject: '🏔 Tu cotización Nomand Studio — ' + proyecto,
-        html: emailHtml,
-        clienteNombre: cliente,
-        proyectoNombre: proyecto,
-        pdfBase64: pdfBase64,
-        nombrePDF: nombrePDF
-      })
-    });
-    const result = await resp.json().catch(()=>({}));
-    // Reemplazar placeholder con URL real del PDF de Drive
-    // (el script devuelve la URL del archivo subido)
-    notify('✅ Cotización enviada a ' + correo);
-    loadCotizacionesGuardadas();
-    switchCotizTab('guardadas');
-  } catch(e) {
-    // Fallback con no-cors si hay problemas de CORS
     await fetch(SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
@@ -1668,17 +1644,20 @@ async function enviarCotizacionCliente() {
       body: JSON.stringify({
         action: 'enviarCotizacion',
         to: correo,
-        subject: '🏔 Tu cotización Nomand Studio — ' + proyecto,
+        subject: 'Tu cotizacion Nomand Studio - ' + proyecto,
         html: emailHtml,
         clienteNombre: cliente,
         proyectoNombre: proyecto,
         pdfBase64: pdfBase64,
         nombrePDF: nombrePDF
       })
-    }).catch(()=>{});
-    notify('✅ Cotización enviada a ' + correo);
+    }).catch(e => console.warn('fetch error:', e));
+    notify('Cotizacion enviada a ' + correo);
     loadCotizacionesGuardadas();
     switchCotizTab('guardadas');
+  } catch(e) {
+    notify('Error al enviar. Verifica el correo.', 'error');
+    console.error(e);
   }
 }
 
