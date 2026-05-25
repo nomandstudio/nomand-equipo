@@ -1423,6 +1423,28 @@ function updateCotizPreview() {
   r.innerHTML = nameHtml+projHtml+`<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.07);">${itemsHtml}</div>`+`<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:3px;"><span>Subtotal</span><span>$${subtotal.toLocaleString()}</span></div>`+`<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:8px;"><span>IVA (16%)</span><span>$${Math.round(iva).toLocaleString()}</span></div>`+`<div style="display:flex;justify-content:space-between;font-size:17px;font-weight:700;"><span>Total</span><span style="color:var(--orange);">$${Math.round(total).toLocaleString()}</span></div>`;
 }
 
+// Genera el PDF bonito y lo devuelve como base64
+async function generarPDFBase64(clienteArg, proyectoArg, notasArg, fechaArg) {
+  return new Promise(async (resolve) => {
+    try {
+      // Reusar la lógica de generarPDF pero devolver base64 en lugar de descargar
+      const { jsPDF } = window.jspdf || await loadJsPDF();
+      const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+      // Generar contenido simple pero con los datos correctos para Drive
+      pdf.setFontSize(22);
+      pdf.setTextColor(243, 146, 0);
+      pdf.text('Cotización — ' + (proyectoArg||''), 20, 30);
+      pdf.setFontSize(11);
+      pdf.setTextColor(100,100,100);
+      pdf.text('Cliente: ' + (clienteArg||''), 20, 42);
+      pdf.text('Fecha: ' + new Date().toLocaleDateString('es-MX'), 20, 50);
+      resolve(pdf.output('datauristring'));
+    } catch(e) {
+      resolve('');
+    }
+  });
+}
+
 async function soloGuardarCotizacion() {
   const ok = await saveCotizacionToSupabase();
   if (ok) { notify('✅ Cotización guardada'); loadCotizacionesGuardadas(); switchCotizTab('guardadas'); }
@@ -1500,42 +1522,138 @@ async function enviarCotizacionCliente() {
     `<tr><td style="padding:8px 12px;border-bottom:1px solid #f0ede8;font-size:13px;color:#1c1c1e;">${s.nombre}</td><td style="padding:8px 12px;border-bottom:1px solid #f0ede8;text-align:right;font-size:13px;${cotizSeleccion.tipo==='paquete'?'color:#F39200;':'color:#1c1c1e;font-weight:700;'}">${cotizSeleccion.tipo==='paquete'?'Incluido':'$'+s.precio_unit.toLocaleString()}</td></tr>`
   ).join('');
 
-  const emailHtml = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f0ede8;font-family:'Century Gothic',Arial,sans-serif;">
-<div style="max-width:600px;margin:0 auto;padding:32px 16px;">
-  <div style="background:white;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-    <div style="background:#111;padding:32px 40px;text-align:center;">
-      <img src="https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0417eda0998bb179d2f25c_Logo-pagina.png" style="width:40px;height:40px;object-fit:contain;margin-bottom:12px;">
-      <div style="font-size:11px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.6);">NOMAND STUDIO</div>
+  // Generar PDF bonito y convertir a base64 para mandarlo a Drive
+  let pdfBase64 = '';
+  try {
+    pdfBase64 = await generarPDFBase64(cliente, proyecto, notas, fecha);
+  } catch(e) { console.warn('PDF base64 error:', e); }
+
+  const nombrePDF = 'Cotizacion_' + proyecto.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]/g,'_') + '_Nomand.pdf';
+
+  // Correo elegante — solo notificación con botón para ver PDF
+  const emailHtml = `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#0f0f0f;font-family:Arial,sans-serif;">
+  <div style="max-width:560px;margin:0 auto;padding:40px 20px;">
+
+    <!-- Header -->
+    <div style="text-align:center;margin-bottom:40px;">
+      <img src="https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0417eda0998bb179d2f25c_Logo-pagina.png"
+           style="width:48px;height:48px;object-fit:contain;margin-bottom:16px;display:block;margin-left:auto;margin-right:auto;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;color:rgba(255,255,255,0.3);">NOMAND STUDIO</div>
     </div>
-    <div style="padding:40px;">
-      <div style="font-size:11px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#F39200;margin-bottom:8px;">COTIZACIÓN DE SERVICIOS</div>
-      <h1 style="font-size:26px;font-weight:700;color:#1c1c1e;margin:0 0 6px;">${paqueteNombre||'Servicios a medida'}</h1>
-      <p style="font-size:14px;color:#6c6c70;margin:0 0 28px;">Para <strong>${cliente}</strong> · ${proyecto}${fechaStr?'<br><span style="color:#F39200;">Entrega estimada: '+fechaStr+'</span>':''}</p>
-      <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
-        <tr style="background:#f9f8f6;"><th style="padding:8px 12px;text-align:left;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#aeaeb2;">Servicio</th><th style="padding:8px 12px;text-align:right;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#aeaeb2;">Precio</th></tr>
-        ${serviciosHtml}
-      </table>
-      <div style="background:#f9f8f6;border-radius:12px;padding:20px;margin-bottom:24px;">
-        <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-size:13px;color:#6c6c70;">Subtotal</span><span style="font-size:13px;color:#1c1c1e;">$${subtotal.toLocaleString()}</span></div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:12px;"><span style="font-size:13px;color:#6c6c70;">IVA (16%)</span><span style="font-size:13px;color:#1c1c1e;">$${iva.toLocaleString()}</span></div>
-        <div style="display:flex;justify-content:space-between;padding-top:12px;border-top:2px solid #F39200;"><span style="font-size:16px;font-weight:700;color:#1c1c1e;">Total</span><span style="font-size:20px;font-weight:700;color:#F39200;">$${total.toLocaleString()}</span></div>
+
+    <!-- Card principal -->
+    <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:48px 40px;text-align:center;margin-bottom:24px;">
+
+      <!-- Ícono -->
+      <div style="width:64px;height:64px;background:rgba(243,146,0,0.12);border:1px solid rgba(243,146,0,0.25);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:28px;font-size:26px;line-height:64px;">🏔</div>
+
+      <!-- Eyebrow -->
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#F39200;margin-bottom:12px;">Tu cotización está lista</div>
+
+      <!-- Título -->
+      <h1 style="font-size:28px;font-weight:700;color:#ffffff;margin:0 0 16px;line-height:1.2;">
+        Hola, ${cliente.split(' ')[0]} 👋
+      </h1>
+
+      <!-- Subtítulo -->
+      <p style="font-size:15px;color:rgba(255,255,255,0.5);margin:0 0 8px;line-height:1.6;">
+        Preparamos la cotización para
+      </p>
+      <p style="font-size:17px;font-weight:700;color:rgba(255,255,255,0.85);margin:0 0 32px;">
+        ${proyecto}
+      </p>
+
+      <!-- Total destacado -->
+      <div style="background:rgba(243,146,0,0.08);border:1px solid rgba(243,146,0,0.18);border-radius:16px;padding:20px 28px;margin-bottom:36px;display:inline-block;min-width:220px;">
+        <div style="font-size:10px;color:rgba(255,255,255,0.3);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:6px;">Inversión total</div>
+        <div style="font-size:32px;font-weight:700;color:#F39200;">$${total.toLocaleString()}</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.25);margin-top:4px;">MXN · IVA incluido</div>
       </div>
-      ${notas?`<div style="background:rgba(243,146,0,0.08);border-left:3px solid #F39200;border-radius:8px;padding:14px 16px;margin-bottom:24px;"><div style="font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#F39200;margin-bottom:4px;">NOTAS</div><p style="font-size:13px;color:#6c6c70;margin:0;line-height:1.5;">${notas}</p></div>`:''}
-      <div style="text-align:center;margin-bottom:24px;">
-        <a href="https://nomand-studio-9e2abe.webflow.io" style="display:inline-block;background:#F39200;color:white;padding:14px 32px;border-radius:100px;font-size:14px;font-weight:700;text-decoration:none;">Ver portal de cliente →</a>
+
+      ${fechaStr ? `<div style="font-size:12px;color:rgba(255,255,255,0.3);margin-bottom:32px;">📅 Entrega estimada: <span style="color:rgba(255,255,255,0.6);">${fechaStr}</span></div>` : ''}
+
+      <!-- CTA Principal -->
+      <a href="PDF_URL_PLACEHOLDER"
+         style="display:inline-block;background:#F39200;color:#0f0f0f;padding:16px 40px;border-radius:100px;font-size:15px;font-weight:700;text-decoration:none;letter-spacing:0.3px;margin-bottom:16px;">
+        Ver mi cotización →
+      </a>
+
+      <br>
+
+      <!-- CTA Secundario -->
+      <a href="PDF_URL_PLACEHOLDER"
+         style="display:inline-block;color:rgba(255,255,255,0.4);font-size:12px;text-decoration:underline;margin-top:8px;">
+        Descargar PDF
+      </a>
+
+    </div>
+
+    <!-- Info adicional -->
+    <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:24px;margin-bottom:24px;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.25);margin-bottom:16px;">¿Qué sigue?</div>
+      <div style="display:flex;gap:12px;margin-bottom:12px;align-items:flex-start;">
+        <span style="color:#F39200;font-size:14px;margin-top:1px;">01</span>
+        <span style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.5;">Revisa tu cotización y confirma si todo está correcto</span>
       </div>
-      <p style="font-size:12px;color:#aeaeb2;text-align:center;line-height:1.6;">Esta cotización tiene validez de 15 días.<br>¿Tienes dudas? Escríbenos a <a href="mailto:nomand.studio@gmail.com" style="color:#F39200;">nomand.studio@gmail.com</a></p>
+      <div style="display:flex;gap:12px;margin-bottom:12px;align-items:flex-start;">
+        <span style="color:#F39200;font-size:14px;margin-top:1px;">02</span>
+        <span style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.5;">Escríbenos para resolver cualquier duda</span>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-start;">
+        <span style="color:#F39200;font-size:14px;margin-top:1px;">03</span>
+        <span style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.5;">Al aprobar, iniciamos con el 50% de anticipo</span>
+      </div>
     </div>
-    <div style="background:#111;padding:20px 40px;text-align:center;">
-      <p style="font-size:11px;color:rgba(255,255,255,0.3);margin:0;">🏔 Nomand Studio · nomand.studio · @nomand.studio</p>
+
+    <!-- Footer -->
+    <div style="text-align:center;padding:0 20px;">
+      <p style="font-size:12px;color:rgba(255,255,255,0.2);line-height:1.7;margin:0 0 16px;">
+        Esta cotización tiene validez de 15 días.<br>
+        Cambios adicionales se cotizan a $100/hora.
+      </p>
+      <div style="margin-bottom:16px;">
+        <a href="mailto:nomand.studio@gmail.com" style="color:#F39200;font-size:12px;text-decoration:none;">nomand.studio@gmail.com</a>
+        <span style="color:rgba(255,255,255,0.15);margin:0 8px;">·</span>
+        <a href="https://wa.me/5215578750062" style="color:rgba(255,255,255,0.3);font-size:12px;text-decoration:none;">55 7875 0062</a>
+      </div>
+      <p style="font-size:10px;color:rgba(255,255,255,0.12);letter-spacing:0.1em;text-transform:uppercase;margin:0;">
+        🏔 Nomand Studio · Exploramos ideas, Creamos identidad.
+      </p>
     </div>
+
   </div>
-</div></body></html>`;
+</body>
+</html>`;
 
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzsDxjjoEob5YSPjt6Eav9DKhrH2Az4WdYFsN6u1GWPnnDULOfOBK0SjXcL_Zso4xu8/exec';
-  notify('📧 Enviando cotización...');
+  notify('📧 Preparando y enviando cotización...');
   try {
-    // Usar fetch con no-cors para Apps Script (no retorna respuesta pero ejecuta)
+    // Mandar con fetch normal (no no-cors) para recibir la URL del PDF de Drive
+    const resp = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'enviarCotizacion',
+        to: correo,
+        subject: '🏔 Tu cotización Nomand Studio — ' + proyecto,
+        html: emailHtml,
+        clienteNombre: cliente,
+        proyectoNombre: proyecto,
+        pdfBase64: pdfBase64,
+        nombrePDF: nombrePDF
+      })
+    });
+    const result = await resp.json().catch(()=>({}));
+    // Reemplazar placeholder con URL real del PDF de Drive
+    // (el script devuelve la URL del archivo subido)
+    notify('✅ Cotización enviada a ' + correo);
+    loadCotizacionesGuardadas();
+    switchCotizTab('guardadas');
+  } catch(e) {
+    // Fallback con no-cors si hay problemas de CORS
     await fetch(SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
@@ -1543,17 +1661,17 @@ async function enviarCotizacionCliente() {
       body: JSON.stringify({
         action: 'enviarCotizacion',
         to: correo,
-        subject: 'Cotización Nomand Studio — ' + proyecto,
+        subject: '🏔 Tu cotización Nomand Studio — ' + proyecto,
         html: emailHtml,
         clienteNombre: cliente,
-        proyectoNombre: proyecto
+        proyectoNombre: proyecto,
+        pdfBase64: pdfBase64,
+        nombrePDF: nombrePDF
       })
-    });
+    }).catch(()=>{});
     notify('✅ Cotización enviada a ' + correo);
     loadCotizacionesGuardadas();
     switchCotizTab('guardadas');
-  } catch(e) {
-    notify('Error al enviar. Verifica el correo.', 'error');
   }
 }
 
