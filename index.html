@@ -1860,77 +1860,52 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 </script>
 
-<!-- MODAL CREAR CLIENTE DESDE COTIZACIÓN -->
-<div id="modalCrearDesdeCotiz" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;">
-  <div onclick="document.getElementById('modalCrearDesdeCotiz').style.display='none'" style="position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(12px);"></div>
-  <div style="position:relative;z-index:1;width:100%;max-width:480px;margin:20px;background:rgba(15,15,15,0.85);border:1px solid rgba(255,255,255,0.12);border-radius:24px;padding:36px 32px;backdrop-filter:blur(32px);box-shadow:0 24px 64px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.08);">
-    <div style="display:inline-flex;align-items:center;padding:4px 12px;background:rgba(48,209,88,0.1);border:1px solid rgba(48,209,88,0.25);border-radius:100px;font-size:10px;font-weight:700;color:#30d158;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:16px;font-family:'century-gothic',sans-serif;">Cotizacion aprobada</div>
-    <h2 style="font-size:20px;font-weight:700;color:#fff;margin:0 0 6px;font-family:'century-gothic',sans-serif;">Crear cliente</h2>
-    <p style="font-size:13px;color:rgba(255,255,255,0.4);margin:0 0 24px;font-family:'century-gothic',sans-serif;">Los datos se tomaron de la cotizacion. Completa la informacion faltante.</p>
-    <div style="display:flex;flex-direction:column;gap:12px;">
-      <div><label style="display:block;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px;font-family:'century-gothic',sans-serif;">Nombre del cliente</label><input type="text" id="cdc-nombre" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-family:'century-gothic',sans-serif;font-size:13px;color:white;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(243,146,0,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"></div>
-      <div><label style="display:block;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px;font-family:'century-gothic',sans-serif;">Empresa / Proyecto</label><input type="text" id="cdc-empresa" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-family:'century-gothic',sans-serif;font-size:13px;color:white;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(243,146,0,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"></div>
-      <div><label style="display:block;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px;font-family:'century-gothic',sans-serif;">Correo del cliente</label><input type="email" id="cdc-correo" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-family:'century-gothic',sans-serif;font-size:13px;color:white;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(243,146,0,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"></div>
-      <div><label style="display:block;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px;font-family:'century-gothic',sans-serif;">Telefono</label><input type="tel" id="cdc-telefono" placeholder="+52 55 0000 0000" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-family:'century-gothic',sans-serif;font-size:13px;color:white;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(243,146,0,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"></div>
-      <div><label style="display:block;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px;font-family:'century-gothic',sans-serif;">Nueva fecha de entrega</label><input type="date" id="cdc-fecha" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-family:'century-gothic',sans-serif;font-size:13px;color:white;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(243,146,0,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"></div>
-      <div><label style="display:block;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px;font-family:'century-gothic',sans-serif;">Anticipo recibido (MXN)</label><input type="number" id="cdc-anticipo" placeholder="0" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-family:'century-gothic',sans-serif;font-size:13px;color:white;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(243,146,0,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"></div>
-    </div>
-    <div id="cdc-status" style="font-size:12px;color:rgba(243,146,0,0.8);text-align:center;margin:14px 0 0;font-family:'century-gothic',sans-serif;display:none;"></div>
-    <div style="display:flex;gap:10px;margin-top:20px;">
-      <button onclick="document.getElementById('modalCrearDesdeCotiz').style.display='none'" style="flex:1;padding:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:100px;font-family:'century-gothic',sans-serif;font-size:13px;color:rgba(255,255,255,0.5);cursor:pointer;">Cancelar</button>
-      <button id="cdc-btn" onclick="confirmarCrearClienteDesdeCotiz()" style="flex:2;padding:12px;background:#F39200;border:none;border-radius:100px;font-family:'century-gothic',sans-serif;font-size:13px;font-weight:700;color:#0f0f0f;cursor:pointer;">Crear cliente y enviar acceso</button>
-    </div>
-  </div>
-</div>
 <script>
-var _cdcCotizData = null;
 async function crearClienteDesdeCotiz(id) {
   const data = await api('/rest/v1/cotizaciones?id=eq.'+id+'&select=*');
   if (!Array.isArray(data) || !data.length) return;
-  const c = data[0]; _cdcCotizData = c;
-  document.getElementById('cdc-nombre').value  = c.cliente_nombre || '';
-  document.getElementById('cdc-empresa').value = c.proyecto_nombre || '';
-  document.getElementById('cdc-correo').value  = '';
-  document.getElementById('cdc-telefono').value = '';
-  document.getElementById('cdc-fecha').value   = c.fecha_entrega || '';
-  document.getElementById('cdc-anticipo').value = '';
-  document.getElementById('cdc-status').style.display = 'none';
-  document.getElementById('cdc-btn').textContent = 'Crear cliente y enviar acceso';
-  document.getElementById('cdc-btn').disabled = false;
-  document.getElementById('modalCrearDesdeCotiz').style.display = 'flex';
+  const c = data[0];
+
+  // Navegar a nuevo cliente
+  goTo('nuevo-cliente');
+
+  // Esperar a que el formulario esté en el DOM
+  setTimeout(function() {
+    if (document.getElementById('nc-nombre'))
+      document.getElementById('nc-nombre').value = c.cliente_nombre || '';
+    if (document.getElementById('nc-empresa'))
+      document.getElementById('nc-empresa').value = c.proyecto_nombre || '';
+    if (document.getElementById('nc-proyecto'))
+      document.getElementById('nc-proyecto').value = c.proyecto_nombre || '';
+    if (document.getElementById('nc-fecha'))
+      document.getElementById('nc-fecha').value = c.fecha_entrega || '';
+    if (document.getElementById('nc-total'))
+      document.getElementById('nc-total').value = c.total || '';
+
+    // Seleccionar paquete si viene de uno
+    const paqueteMap = {
+      'esencial': 'Nomada Esencial',
+      'pro': 'Nomada Pro',
+      'cumbre': 'Cumbre Visual',
+      'total': 'Expedicion Total'
+    };
+    const paqueteNombre = paqueteMap[c.paquete_id] || '';
+    const sel = document.getElementById('nc-paquete');
+    if (sel && paqueteNombre) {
+      // Buscar opción que coincida
+      for (let i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].text.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase()
+            .includes(paqueteNombre.toLowerCase())) {
+          sel.selectedIndex = i;
+          autoCheckServicios(sel.value);
+          break;
+        }
+      }
+    }
+    notify('Datos de la cotizacion cargados. Completa el correo y confirma.');
+  }, 150);
 }
-async function confirmarCrearClienteDesdeCotiz() {
-  const nombre   = document.getElementById('cdc-nombre').value.trim();
-  const empresa  = document.getElementById('cdc-empresa').value.trim();
-  const correo   = document.getElementById('cdc-correo').value.trim();
-  const telefono = document.getElementById('cdc-telefono').value.trim();
-  const fecha    = document.getElementById('cdc-fecha').value;
-  const anticipo = parseFloat(document.getElementById('cdc-anticipo').value) || 0;
-  if (!nombre || !empresa || !correo) { notify('Nombre, empresa y correo son requeridos.', 'error'); return; }
-  const btn = document.getElementById('cdc-btn');
-  const status = document.getElementById('cdc-status');
-  btn.disabled = true; btn.textContent = 'Creando...';
-  status.style.display = 'block'; status.textContent = 'Creando acceso del cliente...';
-  try {
-    const SVC = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvd2R1dHp5cnNmbmNud2VqcGJ0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTEyMzY4MywiZXhwIjoyMDk0Njk5NjgzfQ.RQqdd0AqeJBVt3gRDMiZN-20ND1MvJSYbt83nUiH7IQ';
-    const invRes = await fetch(SB + '/auth/v1/admin/invite', { method:'POST', headers:{'apikey':SVC,'Authorization':'Bearer '+SVC,'Content-Type':'application/json'}, body:JSON.stringify({email:correo,data:{nombre},app_metadata:{rol:'cliente'}}) });
-    const invData = await invRes.json();
-    if (!invData.id && !invData.email) throw new Error('No se pudo crear usuario');
-    status.textContent = 'Guardando en base de datos...';
-    await api('/rest/v1/clientes', { method:'POST', body:JSON.stringify({nombre,empresa,correo,telefono,estado:'Activo',carpeta_creada:false}) });
-    const total = _cdcCotizData?.total || 0;
-    await api('/rest/v1/proyectos', { method:'POST', body:JSON.stringify({nombre:empresa,paquete:_cdcCotizData?.paquete_id||'custom',estado:'En progreso',total_a_cobrar:total,pagado:anticipo,porcentaje_pagado:total>0?Math.round((anticipo/total)*100):0,fecha_entrega:fecha||null,descripcion:'Creado desde cotizacion aprobada'}) });
-    status.textContent = 'Creando carpetas en Drive...';
-    await fetch('https://script.google.com/macros/s/AKfycbx3V1t3njMEoQ9gmYWUMYh3UeMqVRHZx4xe8l90arAL7uuH_cmiRinFmfX2Q_rii7hT/exec', { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'createClientComplete',clientName:empresa,folders:[],email:correo,nombre,sendWelcome:true}) }).catch(()=>{});
-    notify('Cliente creado y acceso enviado a ' + correo);
-    document.getElementById('modalCrearDesdeCotiz').style.display = 'none';
-    goTo('clientes');
-  } catch(e) {
-    notify('Error: ' + e.message, 'error');
-    btn.disabled = false; btn.textContent = 'Crear cliente y enviar acceso';
-    status.style.display = 'none';
-  }
-}
+
 </script>
 </body>
 </html>
