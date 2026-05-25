@@ -1556,32 +1556,29 @@ window.guardarYDescargarPDF = async function() {
 }
 
 async function saveCotizacionToSupabase() {
-  // Guardar en Drive via Apps Script
-  try {
-    const payload_drive = buildCotizPayload();
-    fetch('https://script.google.com/macros/s/AKfycbzsDxjjoEob5YSPjt6Eav9DKhrH2Az4WdYFsN6u1GWPnnDULOfOBK0SjXcL_Zso4xu8/exec', {
-      method: 'POST', mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'guardarCotizacion', data: payload_drive })
-    }).catch(()=>{});
-  } catch(e) { console.warn('Drive:', e); }
+  const COTIZ_SCRIPT = 'https://script.google.com/macros/s/AKfycbzsDxjjoEob5YSPjt6Eav9DKhrH2Az4WdYFsN6u1GWPnnDULOfOBK0SjXcL_Zso4xu8/exec';
+
   const cliente = document.getElementById('cq-cliente')?.value.trim();
   const proyecto = document.getElementById('cq-proyecto')?.value.trim();
   if (!cliente || !proyecto) { notify('Ingresa el nombre del cliente y del proyecto.'); return false; }
   const correo = document.getElementById('cq-correo')?.value||'';
-  const fecha = document.getElementById('cq-fecha')?.value||'';
-  const notas = document.getElementById('cq-notas')?.value||'';
+  const fecha  = document.getElementById('cq-fecha')?.value||'';
+  const notas  = document.getElementById('cq-notas')?.value||'';
+
   let serviciosIds = [], subtotal = 0;
   if (cotizSeleccion.tipo==='paquete' && cotizSeleccion.paqueteId) {
     const pkg = PAQUETES.find(p=>p.id===cotizSeleccion.paqueteId);
     if (pkg) { serviciosIds=pkg.servicios; subtotal=pkg.precio_paquete; }
   } else {
-    document.querySelectorAll('#cotiz-individuales input[type=checkbox]:checked').forEach(cb=>{ const s=SERVICIOS_CATALOG.find(x=>x.id===cb.value); if(s){serviciosIds.push(s.id);subtotal+=s.precio_unit;} });
+    document.querySelectorAll('#cotiz-individuales input[type=checkbox]:checked').forEach(cb=>{
+      const s=SERVICIOS_CATALOG.find(x=>x.id===cb.value);
+      if(s){serviciosIds.push(s.id);subtotal+=s.precio_unit;}
+    });
   }
   const iva=Math.round(subtotal*IVA), total=subtotal+iva;
   const payload = { cliente_nombre:cliente, proyecto_nombre:proyecto, correo_cliente:correo, tipo:cotizSeleccion.tipo, paquete_id:cotizSeleccion.paqueteId||null, servicios_ids:serviciosIds, subtotal, iva, total, notas, fecha_entrega:fecha, creado_por: currentUser?.email||'equipo' };
 
-  // ── Validar duplicados (solo si no estamos editando ya) ──
+  // ── Validar duplicados (solo si no estamos editando) ──
   if (!cotizEditId) {
     const existentes = await api('/rest/v1/cotizaciones?select=id,cliente_nombre,proyecto_nombre');
     if (Array.isArray(existentes)) {
@@ -1591,28 +1588,43 @@ async function saveCotizacionToSupabase() {
       );
       if (dup) {
         const confirmar = confirm(
-          'Ya existe una cotización para "' + dup.cliente_nombre + '" con el proyecto "' + dup.proyecto_nombre + '".\n\n' +
-          '¿Quieres modificar esa cotización en lugar de crear una nueva?'
+          'Ya existe una cotización para "' + dup.cliente_nombre + '" — "' + dup.proyecto_nombre + '".\n\n' +
+          '¿Quieres modificarla en lugar de crear una nueva?'
         );
         if (confirmar) {
-          // Cargar la cotización existente para editarla
           cotizEditId = dup.id;
-          notify('Editando cotización existente de ' + dup.cliente_nombre);
         } else {
-          notify('Operación cancelada. Cambia el nombre del cliente o proyecto para crear una nueva.', 'error');
+          notify('Cambia el nombre del cliente o proyecto para crear una nueva.', 'error');
           return false;
         }
       }
     }
   }
 
-  let res;
   if (cotizEditId) {
-    res = await api('/rest/v1/cotizaciones?id=eq.'+cotizEditId, { method:'PATCH', body:JSON.stringify(payload) });
+    // Edición — mover PDF viejo a Eliminadas antes de guardar el nuevo
+    const datosViejos = await api('/rest/v1/cotizaciones?id=eq.'+cotizEditId+'&select=proyecto_nombre');
+    if (Array.isArray(datosViejos) && datosViejos.length) {
+      const nombreViejo = 'Cotizacion_' + (datosViejos[0].proyecto_nombre||'').replace(/[^a-zA-Z0-9]/g,'_') + '_Nomand.pdf';
+      fetch(COTIZ_SCRIPT, {
+        method:'POST', mode:'no-cors',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ action:'moverCotizacionEliminada', nombrePDF: nombreViejo })
+      }).catch(()=>{});
+    }
+    await api('/rest/v1/cotizaciones?id=eq.'+cotizEditId, { method:'PATCH', body:JSON.stringify(payload) });
     cotizEditId = null;
   } else {
-    res = await api('/rest/v1/cotizaciones', { method:'POST', body:JSON.stringify(payload) });
+    await api('/rest/v1/cotizaciones', { method:'POST', body:JSON.stringify(payload) });
   }
+
+  // Guardar nuevo PDF en Drive (solo una vez, aquí)
+  fetch(COTIZ_SCRIPT, {
+    method:'POST', mode:'no-cors',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ action:'guardarCotizacion', data: payload })
+  }).catch(()=>{});
+
   return true;
 }
 
