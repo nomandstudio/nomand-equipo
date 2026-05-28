@@ -1598,34 +1598,40 @@ function buildCotizPayload() {
 }
 
 window.enviarCotizacionCliente = async function() {
-  const cliente = document.getElementById('cq-cliente')?.value.trim();
+  const cliente  = document.getElementById('cq-cliente')?.value.trim();
   const proyecto = document.getElementById('cq-proyecto')?.value.trim();
-  const correo = document.getElementById('cq-correo')?.value.trim();
+  const correo   = document.getElementById('cq-correo')?.value.trim();
   if (!cliente || !proyecto) { notify('Ingresa nombre del cliente y proyecto.', 'error'); return; }
-  if (!correo) { notify('Ingresa el correo del cliente para enviar.', 'error'); return; }
+  if (!correo)  { notify('Ingresa el correo del cliente para enviar.', 'error'); return; }
 
-  // Guardar primero (con validación de duplicados)
+  notify('Preparando cotizacion...');
+
+  // 1. Guardar en Supabase primero (SIN guardar en Drive todavía)
+  window._cotizYaGuardadaEnDrive = true; // evitar que saveCotizacion guarde en Drive
   const ok = await saveCotizacionToSupabase();
   if (!ok) return;
-  // Marcar como ya guardado para que el fetch de Drive no duplique
-  window._cotizYaGuardadaEnDrive = true;
 
-  let serviciosDetalle = [], subtotal = 0, paqueteNombre = '';
-  if (cotizSeleccion.tipo==='paquete' && cotizSeleccion.paqueteId) {
-    const pkg = PAQUETES.find(p=>p.id===cotizSeleccion.paqueteId);
-    if (pkg) { paqueteNombre=pkg.nombre; subtotal=pkg.precio_paquete; pkg.servicios.forEach(sid=>{ const s=SERVICIOS_CATALOG.find(x=>x.id===sid); if(s) serviciosDetalle.push(s); }); }
-  } else {
-    document.querySelectorAll('#cotiz-individuales input[type=checkbox]:checked').forEach(cb=>{ const s=SERVICIOS_CATALOG.find(x=>x.id===cb.value); if(s){serviciosDetalle.push(s);subtotal+=s.precio_unit;} });
-  }
-  const iva=Math.round(subtotal*IVA), total=subtotal+iva;
+  // 2. Generar el PDF bonito y convertirlo a base64
+  notify('Generando PDF...');
+  let pdfBase64 = '';
+  try {
+    pdfBase64 = await new Promise(async (resolve) => {
+      // Esperar a que jsPDF esté cargado
+      await generarPDF(); // esto lo descarga localmente Y captura base64
+      // El override en generarPDF captura el base64
+      setTimeout(() => resolve(window._lastPDFBase64 || ''), 500);
+    });
+  } catch(e) { console.warn('PDF gen:', e); }
+
+  // 3. Mandar al Apps Script — sube a Drive y manda correo
+  const nombrePDF = 'Cotizacion_' + proyecto.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]/g,'_') + '_Nomand.pdf';
   const fecha = document.getElementById('cq-fecha')?.value||'';
-  const notas = document.getElementById('cq-notas')?.value||'';
   const fechaStr = fecha ? new Date(fecha+'T00:00:00').toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'}) : '';
   const MTN_BG = 'https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0e7aa0cfb6c29eb251dd45_mathias-reding--6uN87kZrdE-unsplash.jpg';
 
   const emailHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>'
     + '<body style="margin:0;padding:0;font-family:Arial,sans-serif;">'
-    + '<table width="100%" cellpadding="0" cellspacing="0" style="background-image:url(' + "'"+MTN_BG+"'" + ');background-size:cover;background-position:center;background-color:#0f0f0f;min-height:100%;">'
+    + '<table width="100%" cellpadding="0" cellspacing="0" style="background-image:url(\'' + MTN_BG + '\');background-size:cover;background-position:center;background-color:#0f0f0f;">'
     + '<tr><td align="center" style="padding:40px 20px;">'
     + '<div style="max-width:500px;width:100%;background:rgba(10,10,10,0.82);border:1px solid rgba(255,255,255,0.11);border-radius:24px;overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,0.10),0 32px 80px rgba(0,0,0,0.7);">'
     + '<div style="padding:32px 36px 24px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.07);">'
@@ -1653,22 +1659,27 @@ window.enviarCotizacionCliente = async function() {
     + '</div>'
     + '</div></td></tr></table></body></html>';
 
-  const nombrePDF = 'Cotizacion_' + proyecto.replace(/[^a-zA-Z0-9]/g,'_') + '_Nomand.pdf';
-  let pdfBase64 = '';
-  try { pdfBase64 = await new Promise(r => { window._pdfCapture = r; guardarYDescargarPDF(true); }); } catch(e) {}
-
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzsDxjjoEob5YSPjt6Eav9DKhrH2Az4WdYFsN6u1GWPnnDULOfOBK0SjXcL_Zso4xu8/exec';
   notify('Enviando cotizacion...');
   try {
-    await fetch(SCRIPT_URL, {
+    await fetch('https://script.google.com/macros/s/AKfycbzsDxjjoEob5YSPjt6Eav9DKhrH2Az4WdYFsN6u1GWPnnDULOfOBK0SjXcL_Zso4xu8/exec', {
       method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'enviarCotizacion', to: correo, subject: 'Tu cotizacion Nomand Studio - ' + proyecto, html: emailHtml, pdfBase64, nombrePDF })
+      body: JSON.stringify({
+        action: 'enviarCotizacion',
+        to: correo,
+        subject: 'Tu cotizacion Nomand Studio - ' + proyecto,
+        html: emailHtml,
+        pdfBase64: pdfBase64,
+        nombrePDF: nombrePDF
+      })
     });
     notify('Cotizacion enviada a ' + correo);
     switchCotizTab('guardadas');
     await loadCotizacionesGuardadas();
-  } catch(e) { notify('Error al enviar.', 'error'); }
+  } catch(e) {
+    notify('Error al enviar.', 'error');
+    console.error(e);
+  }
 }
 
 
@@ -1915,9 +1926,11 @@ async function generarPDF(clienteArg, proyectoArg, notasArg, fechaArg) {
       function captureNext() {
         if (idx >= pageArr.length) {
           var nombrePDF = 'Cotizacion_' + proyecto.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]/g,'').replace(/\s+/g,'_') + '_Nomand.pdf';
+          // Guardar base64 para envío por correo
+          window._lastPDFBase64 = pdf.output('datauristring');
           pdf.save(nombrePDF);
           document.body.removeChild(div);
-          notify('✅ PDF descargado: Cotizacion_'+proyecto+'');
+          notify('PDF descargado: ' + nombrePDF);
           return;
         }
         html2canvas(pageArr[idx], { scale:1.5, useCORS:true, allowTaint:true, backgroundColor:null }).then(function(canvas) {
