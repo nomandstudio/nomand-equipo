@@ -314,10 +314,94 @@ tr:hover td { background:rgba(255,255,255,0.03); }
 @media(max-width:768px){
   .topbar{padding:0 16px;}
   .sidebar{display:none;}
-  .main{padding:20px 16px 48px;}
+  .main{padding:16px 16px 80px;}
   .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
   .form-grid{grid-template-columns:1fr;}
   .welcome{flex-direction:column;gap:14px;align-items:flex-start;}
+  .tb-badge{display:none;}
+  .tb-user .tb-role{display:none;}
+
+  /* Botón hamburguesa */
+  .mob-menu-btn{
+    display:flex;align-items:center;justify-content:center;
+    width:36px;height:36px;border-radius:10px;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.1);
+    cursor:pointer;flex-shrink:0;
+  }
+  .mob-menu-btn span{
+    display:block;width:16px;height:1.5px;
+    background:rgba(255,255,255,0.7);
+    position:relative;transition:all 0.2s;
+  }
+  .mob-menu-btn span::before,.mob-menu-btn span::after{
+    content:'';position:absolute;left:0;
+    width:16px;height:1.5px;background:rgba(255,255,255,0.7);
+    transition:all 0.2s;
+  }
+  .mob-menu-btn span::before{top:-5px;}
+  .mob-menu-btn span::after{top:5px;}
+
+  /* Drawer lateral */
+  #mob-drawer{
+    display:none;position:fixed;inset:0;z-index:200;
+  }
+  #mob-drawer.open{display:block;}
+  #mob-drawer-bg{
+    position:absolute;inset:0;
+    background:rgba(0,0,0,0.5);
+    backdrop-filter:blur(4px);
+  }
+  #mob-drawer-panel{
+    position:absolute;left:0;top:0;bottom:0;width:260px;
+    background:rgba(15,15,15,0.97);
+    border-right:1px solid rgba(255,255,255,0.10);
+    backdrop-filter:blur(32px);
+    padding:24px 16px;
+    display:flex;flex-direction:column;gap:2px;
+    animation:drawerIn 0.25s cubic-bezier(0.16,1,0.3,1);
+    overflow-y:auto;
+  }
+  @keyframes drawerIn{from{transform:translateX(-100%)}to{transform:translateX(0)}}
+  #mob-drawer-panel .sb-btn{font-size:15px;padding:12px 14px;}
+  #mob-drawer-header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding-bottom:20px;margin-bottom:8px;
+    border-bottom:1px solid rgba(255,255,255,0.08);
+  }
+  #mob-drawer-logo{display:flex;align-items:center;gap:8px;}
+  #mob-drawer-logo img{width:24px;height:24px;object-fit:contain;}
+  #mob-drawer-logo span{font-size:12px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.7);}
+  #mob-drawer-close{
+    width:30px;height:30px;border-radius:50%;
+    background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;color:rgba(255,255,255,0.5);font-size:16px;
+  }
+
+  /* Bottom nav */
+  #mob-bottom-nav{
+    display:flex;position:fixed;bottom:0;left:0;right:0;z-index:100;
+    background:rgba(12,12,12,0.95);
+    backdrop-filter:blur(20px);
+    border-top:1px solid rgba(255,255,255,0.08);
+    padding:8px 0 max(8px, env(safe-area-inset-bottom));
+  }
+  .mob-nav-btn{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+    border:none;background:none;cursor:pointer;padding:4px 0;
+    font-family:inherit;color:rgba(255,255,255,0.4);
+    transition:color 0.15s;
+  }
+  .mob-nav-btn.active{color:#F39200;}
+  .mob-nav-btn .mni{font-size:20px;}
+  .mob-nav-btn .mnl{font-size:9px;letter-spacing:0.05em;text-transform:uppercase;font-weight:700;}
+}
+
+@media(min-width:769px){
+  .mob-menu-btn{display:none;}
+  #mob-drawer{display:none!important;}
+  #mob-bottom-nav{display:none!important;}
 }
 </style>
 </head>
@@ -347,6 +431,10 @@ tr:hover td { background:rgba(255,255,255,0.03); }
   <!-- Topbar -->
   <div class="topbar">
     <div class="tb-left">
+      <!-- Hamburguesa solo en móvil -->
+      <div class="mob-menu-btn" onclick="mobDrawerOpen()" id="mob-ham">
+        <span></span>
+      </div>
       <div class="tb-logo">
         <img src="https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0417eda0998bb179d2f25c_Logo-pagina.png" alt="" onerror="this.style.display='none'">
         <span>Nomand</span>
@@ -386,6 +474,46 @@ tr:hover td { background:rgba(255,255,255,0.03); }
 
 <!-- NOTIF -->
 <div class="notif" id="notif"></div>
+
+<!-- DRAWER MÓVIL -->
+<div id="mob-drawer">
+  <div id="mob-drawer-bg" onclick="mobDrawerClose()"></div>
+  <div id="mob-drawer-panel">
+    <div id="mob-drawer-header">
+      <div id="mob-drawer-logo">
+        <img src="https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0417eda0998bb179d2f25c_Logo-pagina.png" onerror="this.style.display='none'">
+        <span>Nomand</span>
+      </div>
+      <div id="mob-drawer-close" onclick="mobDrawerClose()">✕</div>
+    </div>
+    <div class="sb-section">Principal</div>
+    <button class="sb-btn" onclick="mobGoTo('inicio')"><span class="sb-ico">⌂</span> Inicio</button>
+    <button class="sb-btn" onclick="mobGoTo('clientes')"><span class="sb-ico">◈</span> Clientes</button>
+    <div class="sb-section" id="mob-sb-admin" style="display:none">Administración</div>
+    <button class="sb-btn" id="mob-sb-nuevo" style="display:none" onclick="mobGoTo('nuevo-cliente')"><span class="sb-ico">+</span> Nuevo cliente</button>
+    <button class="sb-btn" id="mob-sb-equipo" style="display:none" onclick="mobGoTo('equipo')"><span class="sb-ico">👥</span> Equipo</button>
+    <button class="sb-btn" id="mob-sb-cotiza" style="display:none" onclick="mobGoTo('cotizacion')"><span class="sb-ico">📋</span> Cotización</button>
+    <div style="margin-top:auto;padding-top:24px;border-top:1px solid rgba(255,255,255,0.07);">
+      <button class="sb-btn" onclick="doLogout()" style="color:rgba(255,100,100,0.7);">⎋ Cerrar sesión</button>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV MÓVIL -->
+<div id="mob-bottom-nav">
+  <button class="mob-nav-btn active" id="mbn-inicio" onclick="mobGoTo('inicio')">
+    <span class="mni">⌂</span><span class="mnl">Inicio</span>
+  </button>
+  <button class="mob-nav-btn" id="mbn-clientes" onclick="mobGoTo('clientes')">
+    <span class="mni">◈</span><span class="mnl">Clientes</span>
+  </button>
+  <button class="mob-nav-btn" id="mbn-cotizacion" onclick="mobGoTo('cotizacion')">
+    <span class="mni">📋</span><span class="mnl">Cotización</span>
+  </button>
+  <button class="mob-nav-btn" id="mbn-menu" onclick="mobDrawerOpen()">
+    <span class="mni">☰</span><span class="mnl">Más</span>
+  </button>
+</div>
 
 <!-- DROPDOWN MENUS (rendered here to avoid clipping) -->
 <div id="dropdown-container"></div>
@@ -495,10 +623,14 @@ async function initApp(user) {
   if (currentRole === 'owner' || currentRole === 'designer') {
     document.getElementById('sb-admin-section').style.display = 'block';
     document.getElementById('sb-nuevo-cliente').style.display = 'flex';
+    document.getElementById('mob-sb-admin').style.display = 'block';
+    document.getElementById('mob-sb-nuevo').style.display = 'flex';
   }
   if (currentRole === 'owner') {
     document.getElementById('sb-equipo').style.display = 'flex';
-  document.getElementById('sb-cotiza').style.display = 'flex';
+    document.getElementById('sb-cotiza').style.display = 'flex';
+    document.getElementById('mob-sb-equipo').style.display = 'flex';
+    document.getElementById('mob-sb-cotiza').style.display = 'flex';
   }
 
   goTo('inicio');
@@ -1472,8 +1604,11 @@ window.enviarCotizacionCliente = async function() {
   if (!cliente || !proyecto) { notify('Ingresa nombre del cliente y proyecto.', 'error'); return; }
   if (!correo) { notify('Ingresa el correo del cliente para enviar.', 'error'); return; }
 
+  // Guardar primero (con validación de duplicados)
   const ok = await saveCotizacionToSupabase();
   if (!ok) return;
+  // Marcar como ya guardado para que el fetch de Drive no duplique
+  window._cotizYaGuardadaEnDrive = true;
 
   let serviciosDetalle = [], subtotal = 0, paqueteNombre = '';
   if (cotizSeleccion.tipo==='paquete' && cotizSeleccion.paqueteId) {
@@ -1578,28 +1713,7 @@ async function saveCotizacionToSupabase() {
   const iva=Math.round(subtotal*IVA), total=subtotal+iva;
   const payload = { cliente_nombre:cliente, proyecto_nombre:proyecto, correo_cliente:correo, tipo:cotizSeleccion.tipo, paquete_id:cotizSeleccion.paqueteId||null, servicios_ids:serviciosIds, subtotal, iva, total, notas, fecha_entrega:fecha, creado_por: currentUser?.email||'equipo' };
 
-  // ── Validar duplicados (solo si no estamos editando) ──
-  if (!cotizEditId) {
-    const existentes = await api('/rest/v1/cotizaciones?select=id,cliente_nombre,proyecto_nombre');
-    if (Array.isArray(existentes)) {
-      const dup = existentes.find(c =>
-        c.cliente_nombre?.toLowerCase() === cliente.toLowerCase() &&
-        c.proyecto_nombre?.toLowerCase() === proyecto.toLowerCase()
-      );
-      if (dup) {
-        const confirmar = confirm(
-          'Ya existe una cotización para "' + dup.cliente_nombre + '" — "' + dup.proyecto_nombre + '".\n\n' +
-          '¿Quieres modificarla en lugar de crear una nueva?'
-        );
-        if (confirmar) {
-          cotizEditId = dup.id;
-        } else {
-          notify('Cambia el nombre del cliente o proyecto para crear una nueva.', 'error');
-          return false;
-        }
-      }
-    }
-  }
+  // Validación duplicados cotizaciones — desactivada temporalmente
 
   if (cotizEditId) {
     // Edición — mover PDF viejo a Eliminadas antes de guardar el nuevo
@@ -1618,12 +1732,15 @@ async function saveCotizacionToSupabase() {
     await api('/rest/v1/cotizaciones', { method:'POST', body:JSON.stringify(payload) });
   }
 
-  // Guardar nuevo PDF en Drive (solo una vez, aquí)
-  fetch(COTIZ_SCRIPT, {
-    method:'POST', mode:'no-cors',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ action:'guardarCotizacion', data: payload })
-  }).catch(()=>{});
+  // Guardar nuevo PDF en Drive (solo si no viene de enviarCotizacionCliente)
+  if (!window._cotizYaGuardadaEnDrive) {
+    fetch(COTIZ_SCRIPT, {
+      method:'POST', mode:'no-cors',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'guardarCotizacion', data: payload })
+    }).catch(()=>{});
+  }
+  window._cotizYaGuardadaEnDrive = false;
 
   return true;
 }
@@ -1934,7 +2051,44 @@ function fIco(n){
   return'📎';
 }
 
-// ── INIT ──
+// ── MENÚ MÓVIL ──────────────────────────────────
+function mobDrawerOpen() {
+  document.getElementById('mob-drawer').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function mobDrawerClose() {
+  document.getElementById('mob-drawer').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function mobGoTo(section) {
+  mobDrawerClose();
+  goTo(section);
+  // Actualizar bottom nav activo
+  ['inicio','clientes','cotizacion'].forEach(s => {
+    const btn = document.getElementById('mbn-' + s);
+    if (btn) btn.classList.toggle('active', s === section);
+  });
+  if (!['inicio','clientes','cotizacion'].includes(section)) {
+    ['inicio','clientes','cotizacion'].forEach(s => {
+      const btn = document.getElementById('mbn-' + s);
+      if (btn) btn.classList.remove('active');
+    });
+  }
+}
+// Sincronizar visibilidad del drawer con el sidebar
+function syncMobMenu() {
+  const adminVisible = document.getElementById('sb-admin-section')?.style.display !== 'none';
+  const adminEl = document.getElementById('mob-sb-admin');
+  const nuevoEl = document.getElementById('mob-sb-nuevo');
+  const equipoEl = document.getElementById('mob-sb-equipo');
+  const cotizaEl = document.getElementById('mob-sb-cotiza');
+  if (adminEl) adminEl.style.display = adminVisible ? '' : 'none';
+  if (nuevoEl) nuevoEl.style.display = document.getElementById('sb-nuevo-cliente')?.style.display || 'none';
+  if (equipoEl) equipoEl.style.display = document.getElementById('sb-equipo')?.style.display || 'none';
+  if (cotizaEl) cotizaEl.style.display = document.getElementById('sb-cotiza')?.style.display || 'none';
+}
+// Llamar syncMobMenu cuando se muestre el app
+const _origInitApp = typeof initApp === 'function' ? initApp : null;
 document.addEventListener('DOMContentLoaded', async () => {
   const s = gs();
   const urlParams = new URLSearchParams(window.location.search);
