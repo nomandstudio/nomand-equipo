@@ -1619,35 +1619,25 @@ window.enviarCotizacionCliente = async function() {
   const ok = await saveCotizacionToSupabase();
   if (!ok) return;
 
-  // Generar PDF bonito SIN descarga y subir a Drive para obtener link
-  notify('Generando PDF para Drive...');
+  // Generar PDF bonito SIN descarga
+  notify('Generando PDF...');
   const nombrePDF = 'Cotizacion_' + proyecto.replace(/[^a-zA-Z0-9]/g,'_') + '_Nomand.pdf';
   let pdfBase64 = '';
   try { pdfBase64 = await generarPDFSinDescargar(); } catch(e) { console.warn('PDF:', e); }
 
-  notify('Subiendo a Drive...');
-  let driveUrl = '';
-  try {
-    const resp = await fetch('https://script.google.com/macros/s/AKfycbzsDxjjoEob5YSPjt6Eav9DKhrH2Az4WdYFsN6u1GWPnnDULOfOBK0SjXcL_Zso4xu8/exec', {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'subirPDF', pdfBase64, nombrePDF, cliente_nombre: cliente, proyecto_nombre: proyecto })
-    });
-    const result = await resp.json();
-    driveUrl = result.driveUrl || '';
-  } catch(e) { console.warn('Drive subir:', e); }
-
   const fecha = document.getElementById('cq-fecha')?.value||'';
   const fechaStr = fecha ? new Date(fecha+'T00:00:00').toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'}) : '';
-  const link = driveUrl || 'https://nomand-studio-9e2abe.webflow.io';
+  const MTN = 'https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0e7aa0cfb6c29eb251dd45_mathias-reding--6uN87kZrdE-unsplash.jpg';
+  const LOGO = 'https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0417eda0998bb179d2f25c_Logo-pagina.png';
 
-  const html = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>'
+  // Template del correo — el Apps Script reemplazará PDF_LINK con el link real de Drive
+  const emailTemplate = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>'
     + '<body style="margin:0;padding:0;font-family:Arial,sans-serif;">'
-    + '<table width="100%" cellpadding="0" cellspacing="0" style="background-image:url(https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0e7aa0cfb6c29eb251dd45_mathias-reding--6uN87kZrdE-unsplash.jpg);background-size:cover;background-position:center;background-color:#0f0f0f;">'
+    + '<table width="100%" cellpadding="0" cellspacing="0" style="background-image:url(' + MTN + ');background-size:cover;background-position:center;background-color:#0f0f0f;">'
     + '<tr><td align="center" style="padding:40px 20px;">'
     + '<div style="max-width:500px;width:100%;background:rgba(10,10,10,0.85);border:1px solid rgba(255,255,255,0.11);border-radius:24px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,0.7);">'
     + '<div style="padding:28px 32px 20px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.07);">'
-    + '<img src="https://cdn.prod.website-files.com/6a0284e59b4361db568fb80e/6a0417eda0998bb179d2f25c_Logo-pagina.png" style="width:38px;height:38px;object-fit:contain;display:block;margin:0 auto 10px;">'
+    + '<img src="' + LOGO + '" style="width:38px;height:38px;object-fit:contain;display:block;margin:0 auto 10px;">'
     + '<div style="font-size:10px;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;color:rgba(255,255,255,0.3);">NOMAND STUDIO</div></div>'
     + '<div style="padding:32px;text-align:center;">'
     + '<div style="display:inline-block;font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#F39200;background:rgba(243,146,0,0.10);border:1px solid rgba(243,146,0,0.22);border-radius:100px;padding:5px 14px;margin-bottom:20px;">Tu cotizacion esta lista</div>'
@@ -1655,7 +1645,7 @@ window.enviarCotizacionCliente = async function() {
     + '<p style="font-size:13px;color:rgba(255,255,255,0.5);margin:0 0 4px;">Preparamos la cotizacion para</p>'
     + '<p style="font-size:16px;font-weight:700;color:rgba(255,255,255,0.85);margin:0 0 28px;">' + proyecto + '</p>'
     + (fechaStr ? '<p style="font-size:11px;color:rgba(255,255,255,0.3);margin-bottom:24px;">Entrega estimada: <span style="color:rgba(255,255,255,0.6);">' + fechaStr + '</span></p>' : '')
-    + '<a href="' + link + '" style="display:inline-block;background:#F39200;color:#0f0f0f;padding:15px 40px;border-radius:100px;font-size:14px;font-weight:700;text-decoration:none;">Ver mi cotizacion</a>'
+    + '<a href="PDF_LINK" style="display:inline-block;background:#F39200;color:#0f0f0f;padding:15px 40px;border-radius:100px;font-size:14px;font-weight:700;text-decoration:none;">Ver mi cotizacion</a>'
     + '</div>'
     + '<div style="padding:20px 32px;border-top:1px solid rgba(255,255,255,0.07);">'
     + '<p style="font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.2);margin:0 0 12px;">Que sigue</p>'
@@ -1670,17 +1660,28 @@ window.enviarCotizacionCliente = async function() {
     + '<a href="https://wa.me/5215578750062" style="color:rgba(255,255,255,0.25);font-size:11px;text-decoration:none;">55 7875 0062</a>'
     + '</div></div></td></tr></table></body></html>';
 
-  notify('Enviando correo...');
+  // Mandar todo al Apps Script en una sola llamada:
+  // sube el PDF a Drive, obtiene el link, reemplaza PDF_LINK y manda el correo
+  notify('Enviando cotizacion...');
   try {
     await fetch('https://script.google.com/macros/s/AKfycbzsDxjjoEob5YSPjt6Eav9DKhrH2Az4WdYFsN6u1GWPnnDULOfOBK0SjXcL_Zso4xu8/exec', {
       method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'enviarCotizacion', to: correo, subject: 'Tu cotizacion Nomand Studio - ' + proyecto, html })
+      body: JSON.stringify({
+        action: 'subirYEnviar',
+        to: correo,
+        subject: 'Tu cotizacion Nomand Studio - ' + proyecto,
+        htmlTemplate: emailTemplate,
+        pdfBase64: pdfBase64,
+        nombrePDF: nombrePDF,
+        cliente_nombre: cliente,
+        proyecto_nombre: proyecto
+      })
     });
-    notify('Cotizacion enviada a ' + correo + (driveUrl ? ' con link de Drive' : ''));
+    notify('Cotizacion enviada a ' + correo);
     switchCotizTab('guardadas');
     await loadCotizacionesGuardadas();
-  } catch(e) { notify('Error al enviar el correo.', 'error'); console.error(e); }
+  } catch(e) { notify('Error al enviar.', 'error'); console.error(e); }
 }
 
 
@@ -1799,17 +1800,22 @@ async function descargarCotizGuardada(id) {
 
 // Genera el PDF bonito y devuelve base64 SIN descargar localmente
 async function generarPDFSinDescargar() {
-  return new Promise(async (resolve) => {
-    window._pdfSaveOverride = function(pdf) {
+  return new Promise((resolve) => {
+    // Poner el override ANTES de llamar generarPDF
+    window._pdfSaveOverride = function(base64) {
       window._pdfSaveOverride = null;
-      resolve(pdf.output('datauristring'));
+      resolve(base64);
     };
-    try {
-      await generarPDF();
-      setTimeout(function() {
-        if (window._pdfSaveOverride) { window._pdfSaveOverride = null; resolve(''); }
-      }, 10000);
-    } catch(e) { window._pdfSaveOverride = null; resolve(''); }
+    // Timeout de seguridad
+    var timeout = setTimeout(function() {
+      window._pdfSaveOverride = null;
+      resolve('');
+    }, 15000);
+    generarPDF().catch(function() {
+      clearTimeout(timeout);
+      window._pdfSaveOverride = null;
+      resolve('');
+    });
   });
 }
 
@@ -1925,11 +1931,19 @@ async function generarPDF(clienteArg, proyectoArg, notasArg, fechaArg) {
       function captureNext() {
         if (idx >= pageArr.length) {
           var nombrePDF = 'Cotizacion_' + proyecto.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]/g,'').replace(/\s+/g,'_') + '_Nomand.pdf';
-          // Guardar base64 para envío por correo
-          window._lastPDFBase64 = pdf.output('datauristring');
-          pdf.save(nombrePDF);
-          document.body.removeChild(div);
-          notify('PDF descargado: ' + nombrePDF);
+          if (window._pdfSaveOverride) {
+            // Modo captura — devolver base64 sin descargar
+            var base64 = pdf.output('datauristring');
+            var fn = window._pdfSaveOverride;
+            window._pdfSaveOverride = null;
+            document.body.removeChild(div);
+            fn(base64);          } else {
+            // Modo normal — descargar
+            window._lastPDFBase64 = pdf.output('datauristring');
+            pdf.save(nombrePDF);
+            document.body.removeChild(div);
+            notify('PDF descargado: ' + nombrePDF);
+          }
           return;
         }
         html2canvas(pageArr[idx], { scale:1.5, useCORS:true, allowTaint:true, backgroundColor:null }).then(function(canvas) {
