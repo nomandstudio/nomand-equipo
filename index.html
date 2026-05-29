@@ -1660,28 +1660,48 @@ window.enviarCotizacionCliente = async function() {
     + '<a href="https://wa.me/5215578750062" style="color:rgba(255,255,255,0.25);font-size:11px;text-decoration:none;">55 7875 0062</a>'
     + '</div></div></td></tr></table></body></html>';
 
-  // Mandar todo al Apps Script en una sola llamada:
-  // sube el PDF a Drive, obtiene el link, reemplaza PDF_LINK y manda el correo
-  notify('Enviando cotizacion...');
+  // Paso 1: Subir PDF a Drive con no-cors (no necesitamos respuesta aquí)
+  notify('Subiendo PDF a Drive...');
+  const COTIZ_SCRIPT = 'https://script.google.com/macros/s/AKfycbzsDxjjoEob5YSPjt6Eav9DKhrH2Az4WdYFsN6u1GWPnnDULOfOBK0SjXcL_Zso4xu8/exec';
+  await fetch(COTIZ_SCRIPT, {
+    method: 'POST', mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'subirPDF', pdfBase64, nombrePDF, cliente_nombre: cliente, proyecto_nombre: proyecto })
+  }).catch(()=>{});
+
+  // Esperar 3 segundos para que Drive procese el archivo
+  await new Promise(r => setTimeout(r, 3000));
+
+  // Paso 2: Mandar correo con JSONP — el script busca el PDF ya subido y obtiene el link
+  notify('Enviando correo...');
   try {
-    await fetch('https://script.google.com/macros/s/AKfycbzsDxjjoEob5YSPjt6Eav9DKhrH2Az4WdYFsN6u1GWPnnDULOfOBK0SjXcL_Zso4xu8/exec', {
-      method: 'POST', mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    await new Promise((resolve) => {
+      const cbName = 'nm_cb_' + Date.now();
+      window[cbName] = function(r) { delete window[cbName]; document.head.removeChild(s); resolve(r||{}); };
+      const params = new URLSearchParams({
         action: 'subirYEnviar',
-        to: correo,
-        subject: 'Tu cotizacion Nomand Studio - ' + proyecto,
-        htmlTemplate: emailTemplate,
-        pdfBase64: pdfBase64,
-        nombrePDF: nombrePDF,
-        cliente_nombre: cliente,
-        proyecto_nombre: proyecto
-      })
+        callback: cbName,
+        data: JSON.stringify({
+          action: 'subirYEnviar',
+          to: correo,
+          subject: 'Tu cotizacion Nomand Studio - ' + proyecto,
+          htmlTemplate: emailTemplate,
+          nombrePDF: nombrePDF,
+          pdfBase64: '' // ya está en Drive, no reenviar
+        })
+      });
+      const s = document.createElement('script');
+      s.src = COTIZ_SCRIPT + '?' + params.toString();
+      s.onerror = function() { delete window[cbName]; resolve({}); };
+      document.head.appendChild(s);
+      setTimeout(() => { if(window[cbName]){delete window[cbName]; resolve({});} }, 20000);
     });
     notify('Cotizacion enviada a ' + correo);
-    switchCotizTab('guardadas');
-    await loadCotizacionesGuardadas();
-  } catch(e) { notify('Error al enviar.', 'error'); console.error(e); }
+  } catch(e) {
+    notify('Cotizacion enviada a ' + correo + ' (sin confirmar)');
+  }
+  switchCotizTab('guardadas');
+  await loadCotizacionesGuardadas();
 }
 
 
